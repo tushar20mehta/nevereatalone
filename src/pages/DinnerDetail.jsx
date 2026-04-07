@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Calendar, MapPin, Users, ChefHat, ArrowLeft } from 'lucide-react'
 import LoginModal from '../components/LoginModal'
+import DinnerChat from '../components/DinnerChat'
 
 export default function DinnerDetail() {
   const { id } = useParams()
@@ -27,13 +28,19 @@ export default function DinnerDetail() {
   }, [id])
 
   const handleJoin = async () => {
-    if (!user) { setShowLogin(true); return }
+    if (!user) {
+      setShowLogin(true)
+      return
+    }
     setJoining(true)
     try {
       await updateDoc(doc(db, 'dinners', id), {
         guests: arrayUnion(user.uid)
       })
-      setDinner(prev => ({ ...prev, guests: [...(prev.guests || []), user.uid] }))
+      setDinner(prev => ({
+        ...prev,
+        guests: [...(prev.guests || []), user.uid]
+      }))
     } catch (err) {
       alert('Fehler beim Beitreten.')
     }
@@ -46,7 +53,10 @@ export default function DinnerDetail() {
       await updateDoc(doc(db, 'dinners', id), {
         guests: arrayRemove(user.uid)
       })
-      setDinner(prev => ({ ...prev, guests: (prev.guests || []).filter(g => g !== user.uid) }))
+      setDinner(prev => ({
+        ...prev,
+        guests: (prev.guests || []).filter(g => g !== user.uid)
+      }))
     } catch (err) {
       alert('Fehler beim Verlassen.')
     }
@@ -76,47 +86,49 @@ export default function DinnerDetail() {
         <div className="detail-header">
           <span className="dinner-card-cuisine">{dinner.cuisine}</span>
           <h1>{dinner.title}</h1>
+        </div>
+        {dinner.imageUrl && (
+          <img src={dinner.imageUrl} alt={dinner.title} className="detail-card-image" />
+        )}
+        <div className="detail-card-body">
           {dinner.description && <p className="detail-desc">{dinner.description}</p>}
-        </div>
-
-        <div className="detail-info">
-          {dinner.date && <div className="detail-info-item"><Calendar size={18}/> {dinner.date} {dinner.time && `um ${dinner.time} Uhr`}</div>}
-          {dinner.location && <div className="detail-info-item"><MapPin size={18}/> {dinner.location}{dinner.address && `, ${dinner.address}`}</div>}
-          <div className="detail-info-item"><Users size={18}/> {guestCount} / {dinner.maxGuests} Gäste</div>
-        </div>
-
-        <div className="detail-host">
-          <div className="dinner-card-host-avatar">
-            {dinner.hostPhoto ? <img src={dinner.hostPhoto} alt="" style={{width:'100%',height:'100%',borderRadius:'50%'}}/> : <ChefHat size={16}/>}
+          <div className="detail-info">
+            {dinner.date && <div className="detail-info-item"><Calendar size={16}/> {dinner.date}{dinner.time ? `, ${dinner.time}` : ''}</div>}
+            {dinner.location && <div className="detail-info-item"><MapPin size={16}/> {dinner.location}</div>}
+            {dinner.address && <div className="detail-info-item"><MapPin size={16}/> {dinner.address}</div>}
+            <div className="detail-info-item"><Users size={16}/> {guestCount}/{dinner.maxGuests} Gäste</div>
           </div>
-          <span>Gehostet von <strong>{dinner.hostName}</strong></span>
         </div>
-
-        {!isHost && (
-          <div className="detail-actions">
-            {isGuest ? (
-              <button className="btn btn-outline" onClick={handleLeave} disabled={joining}>
-                {joining ? 'Wird bearbeitet...' : 'Teilnahme absagen'}
-              </button>
-            ) : (
-              <button className="btn btn-primary" onClick={handleJoin} disabled={joining || isFull}>
-                {isFull ? 'Dinner ist voll' : joining ? 'Wird bearbeitet...' : 'Teilnehmen'}
-              </button>
-            )}
-          </div>
-        )}
-
-        {isHost && (
-          <div className="detail-guests-section">
-            <h3>Gästeliste ({guestCount})</h3>
-            {guestCount === 0 ? (
-              <p className="detail-no-guests">Noch keine Gäste angemeldet.</p>
-            ) : (
-              <p className="detail-no-guests">Gäste sind angemeldet. Verwalte sie unter "Meine Dinner".</p>
-            )}
-          </div>
-        )}
+        <span>Gehostet von <strong>{dinner.hostName}</strong></span>
       </div>
+
+      {!isHost && (
+        <div className="detail-actions">
+          {isGuest ? (
+            <button className="btn btn-outline" onClick={handleLeave} disabled={joining}>
+              {joining ? 'Wird bearbeitet...' : 'Teilnahme absagen'}
+            </button>
+          ) : (
+            <button className="btn btn-primary" onClick={handleJoin} disabled={joining || isFull}>
+              {isFull ? 'Dinner ist voll' : joining ? 'Wird bearbeitet...' : 'Teilnehmen'}
+            </button>
+          )}
+        </div>
+      )}
+
+      {isHost && (
+        <div className="detail-guests-section">
+          <h3>Gästeliste ({guestCount})</h3>
+          {guestCount === 0 ? (
+            <p className="detail-no-guests">Noch keine Gäste angemeldet.</p>
+          ) : (
+            <p className="detail-no-guests">Gäste sind angemeldet. Verwalte sie unter "Meine Dinner".</p>
+          )}
+        </div>
+      )}
+
+      <DinnerChat dinnerId={id} dinner={dinner} />
+
       {showLogin && <LoginModal onClose={() => setShowLogin(false)}/>}
     </div>
   )
