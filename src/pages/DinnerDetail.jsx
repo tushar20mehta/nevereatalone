@@ -80,7 +80,7 @@ export default function DinnerDetail() {
     try {
       await updateDoc(doc(db, 'dinners', id), { guests: arrayUnion(user.uid) })
       setDinner(prev => ({ ...prev, guests: [...(prev.guests || []), user.uid] }))
-      showToast('Du nimmst jetzt am Dinner teil!', 'success')
+      showToast('Du nimmst jetzt am Dinner teil! 🎉', 'success')
     } catch (err) {
       showToast('Fehler beim Beitreten.', 'error')
     }
@@ -112,7 +112,7 @@ export default function DinnerDetail() {
       })
       setHasRated(true)
       setRatings(prev => [...prev, { userId: user.uid, userName: user.displayName || 'Anonym', stars: myRating, comment: myComment.trim() }])
-      showToast('Bewertung abgegeben! Danke!', 'success')
+      showToast('Bewertung abgegeben! Danke! ⭐', 'success')
     } catch (err) {
       showToast('Fehler beim Bewerten.', 'error')
     }
@@ -123,7 +123,7 @@ export default function DinnerDetail() {
   if (!dinner) return (
     <div className="empty-state" style={{paddingTop:120}}>
       <h3>Dinner nicht gefunden</h3>
-      <button className="btn btn-primary" onClick={() => navigate('/')}>Zurueck</button>
+      <button className="btn btn-primary" onClick={() => navigate('/')}>Zurück</button>
     </div>
   )
 
@@ -137,7 +137,7 @@ export default function DinnerDetail() {
   return (
     <div className="detail-page">
       <button className="detail-back" onClick={() => navigate(-1)}>
-        <ArrowLeft size={18}/> Zurueck
+        <ArrowLeft size={18}/> Zurück
       </button>
 
       <div className="detail-card">
@@ -164,7 +164,7 @@ export default function DinnerDetail() {
             {dinner.date && <div className="detail-info-item"><Calendar size={16}/> {dinner.date}{dinner.time ? `, ${dinner.time}` : ''}</div>}
             {dinner.location && <div className="detail-info-item"><MapPin size={16}/> {dinner.location}</div>}
             {dinner.address && <div className="detail-info-item"><MapPin size={16}/> {dinner.address}</div>}
-            <div className="detail-info-item"><Users size={16}/> {guestCount}/{dinner.maxGuests} Gaeste</div>
+            <div className="detail-info-item"><Users size={16}/> {guestCount}/{dinner.maxGuests} Gäste</div>
           </div>
         </div>
 
@@ -187,15 +187,16 @@ export default function DinnerDetail() {
 
       {isHost && !past && (
         <div className="detail-guests-section">
-          <h3>Gaesteliste ({guestCount})</h3>
+          <h3>Gästeliste ({guestCount})</h3>
           {guestCount === 0 ? (
-            <p className="detail-no-guests">Noch keine Gaeste angemeldet.</p>
+            <p className="detail-no-guests">Noch keine Gäste angemeldet.</p>
           ) : (
-            <p className="detail-no-guests">Gaeste sind angemeldet. Verwalte sie unter "Meine Dinner".</p>
+            <p className="detail-no-guests">Gäste sind angemeldet. Verwalte sie unter "Meine Dinner".</p>
           )}
         </div>
       )}
 
+      {/* Rating Section for past dinners */}
       {past && user && (isGuest || isHost) && (
         <div className="rating-section">
           <h3>Bewertung</h3>
