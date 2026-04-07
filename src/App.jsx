@@ -4,6 +4,7 @@ import Footer from './components/Footer'
 import Entdecken from './pages/Entdecken'
 import Hosten from './pages/Hosten'
 import MeineDinner from './pages/MeineDinner'
+import DinnerDetail from './pages/DinnerDetail'
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
           <Route path="/" element={<Entdecken />} />
           <Route path="/create" element={<Hosten />} />
           <Route path="/my-dinners" element={<MeineDinner />} />
+          <Route path="/dinner/:id" element={<DinnerDetail />} />
         </Routes>
       </main>
       <Footer />
