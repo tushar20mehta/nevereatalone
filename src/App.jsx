@@ -1,4 +1,5 @@
 import { Routes, Route } from 'react-router-dom'
+import { ToastProvider } from './context/ToastContext'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import Entdecken from './pages/Entdecken'
@@ -8,18 +9,20 @@ import DinnerDetail from './pages/DinnerDetail'
 
 function App() {
   return (
-    <div className="app">
-      <Navbar />
-      <main className="main-content">
-        <Routes>
-          <Route path="/" element={<Entdecken />} />
-          <Route path="/create" element={<Hosten />} />
-          <Route path="/my-dinners" element={<MeineDinner />} />
-          <Route path="/dinner/:id" element={<DinnerDetail />} />
-        </Routes>
-      </main>
-      <Footer />
-    </div>
+    <ToastProvider>
+      <div className="app">
+        <Navbar />
+        <main className="main-content">
+          <Routes>
+            <Route path="/" element={<Entdecken />} />
+            <Route path="/create" element={<Hosten />} />
+            <Route path="/my-dinners" element={<MeineDinner />} />
+            <Route path="/dinner/:id" element={<DinnerDetail />} />
+          </Routes>
+        </main>
+        <Footer />
+      </div>
+    </ToastProvider>
   )
 }
 
