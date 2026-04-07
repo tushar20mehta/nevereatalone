@@ -404,3 +404,53 @@ input,textarea,select{font-family:inherit;font-size:1rem}
   opacity: 0.4;
   cursor: not-allowed;
 }
+
+
+/* ===== Logout Button Styles ===== */
+.user-menu-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--color-text-light);
+  background: var(--color-border-light);
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.logout-btn:hover {
+  background: #fee2e2;
+  color: #dc2626;
+  border-color: #fca5a5;
+}
+
+.mobile-logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #dc2626;
+  border: none;
+  background: none;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 12px 20px;
+  border-top: 1px solid var(--color-border);
+  width: 100%;
+  text-align: left;
+}
+
+.mobile-logout-btn:hover {
+  background: #fee2e2;
+}
