@@ -5,8 +5,17 @@ export default function DinnerCard({ dinner }) {
   const navigate = useNavigate()
 
   return (
-    <div className="dinner-card" onClick={() => navigate(`/dinner/${dinner.id}`)}>
-      {dinner.imageUrl && <img src={dinner.imageUrl} alt={dinner.title} className="dinner-card-image" />}
+    <div
+      className="dinner-card"
+      role="button"
+      tabIndex={0}
+      onClick={() => navigate(`/dinner/${dinner.id}`)}
+      onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/dinner/${dinner.id}`) }}
+      style={{ cursor: 'pointer' }}
+    >
+      {dinner.imageUrl && (
+        <img src={dinner.imageUrl} alt={dinner.title} className="dinner-card-image" />
+      )}
       <div className="dinner-card-body">
         <span className="dinner-card-cuisine">{dinner.cuisine}</span>
         <h3>{dinner.title}</h3>
