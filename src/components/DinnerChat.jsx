@@ -13,7 +13,7 @@ export default function DinnerChat({ dinnerId, dinner }) {
 
   const isParticipant = user && dinner && (
     dinner.hostId === user.uid ||
-    (dinner.guests && dinner.guests.some(g => g.uid === user.uid))
+    (dinner.guests && dinner.guests.includes(user.uid))
   )
 
   useEffect(() => {
