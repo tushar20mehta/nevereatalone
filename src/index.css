@@ -197,6 +197,26 @@ input, textarea, select {
   gap: 12px;
 }
 
+.btn-logout {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--radius-full);
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--color-text-light);
+  border: 1.5px solid var(--color-border);
+  background: var(--color-white);
+  transition: all 0.2s;
+}
+
+.btn-logout:hover {
+  color: #dc2626;
+  border-color: #dc2626;
+  background: #fef2f2;
+}
+
 .mobile-menu-overlay {
   position: fixed;
   inset: 0;
