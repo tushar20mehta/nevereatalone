@@ -784,8 +784,24 @@ input, textarea, select {
     font-size: 2.2rem;
   }
 
+  .navbar-logo-text {
+    display: none;
+  }
+
+  .navbar-links {
+    display: none;
+  }
+
   .user-name {
     display: none;
+  }
+
+  .logout-text {
+    display: none;
+  }
+
+  .btn-logout {
+    padding: 8px;
   }
 
   .form-row {
