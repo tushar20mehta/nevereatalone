@@ -42,7 +42,7 @@ export default function Navbar() {
               <div className="navbar-logo-icon">
                 <UtensilsCrossed size={22} />
               </div>
-              Never Eat Alone
+              <span className="navbar-logo-text">Never Eat Alone</span>
             </button>
 
             {menuOpen && (
@@ -114,7 +114,7 @@ export default function Navbar() {
                   </div>
                   <button className="btn-logout" onClick={logout}>
                     <LogOut size={16} />
-                    Abmelden
+                    <span className="logout-text">Abmelden</span>
                   </button>
                 </>
               ) : (
