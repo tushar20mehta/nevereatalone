@@ -37,7 +37,7 @@ export default function Entdecken() {
     <>
       <section className="hero">
         <h1>Gemeinsam essen, <em>gemeinsam leben.</em></h1>
-        <p>Finde Abendessen in deiner Naehe oder lade andere zu dir ein. Niemand sollte alleine essen muessen.</p>
+        <p>Finde Abendessen in deiner Nähe oder lade andere zu dir ein. Niemand sollte alleine essen müssen.</p>
         <div className="hero-buttons">
           <button className="btn btn-primary" onClick={() => navigate('/create')}><Plus size={18}/>Dinner hosten</button>
           <button className="btn btn-outline" onClick={() => document.querySelector('.search-section')?.scrollIntoView({behavior:'smooth'})}><UtensilsCrossed size={18}/>Dinner entdecken</button>
