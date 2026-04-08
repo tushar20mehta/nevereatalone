@@ -6,6 +6,7 @@ import Entdecken from './pages/Entdecken'
 import Hosten from './pages/Hosten'
 import MeineDinner from './pages/MeineDinner'
 import DinnerDetail from './pages/DinnerDetail'
+import ProfilePage from './pages/ProfilePage'
 
 function App() {
   return (
@@ -18,6 +19,8 @@ function App() {
             <Route path="/create" element={<Hosten />} />
             <Route path="/my-dinners" element={<MeineDinner />} />
             <Route path="/dinner/:id" element={<DinnerDetail />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/profile/:uid" element={<ProfilePage />} />
           </Routes>
         </main>
         <Footer />
