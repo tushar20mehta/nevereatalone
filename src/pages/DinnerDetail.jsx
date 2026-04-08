@@ -3,8 +3,8 @@ import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, collection, addDoc, qu
 import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
-import { useParams, useNavigate } from 'react-router-dom'
-import { Calendar, MapPin, Users, ChefHat, ArrowLeft, Star } from 'lucide-react'
+import { useParams, useNavigate, Link } from 'react-router-dom'
+import { Calendar, MapPin, Users, ChefHat, ArrowLeft, Star, Check, X, Clock, UserPlus } from 'lucide-react'
 import LoginModal from '../components/LoginModal'
 import DinnerChat from '../components/DinnerChat'
 import StarRating from '../components/StarRating'
@@ -29,6 +29,7 @@ export default function DinnerDetail() {
   const { user } = useAuth()
   const { showToast } = useToast()
   const navigate = useNavigate()
+
   const [dinner, setDinner] = useState(null)
   const [loading, setLoading] = useState(true)
   const [joining, setJoining] = useState(false)
@@ -40,6 +41,10 @@ export default function DinnerDetail() {
   const [ratings, setRatings] = useState([])
   const [submittingRating, setSubmittingRating] = useState(false)
   const [hasRated, setHasRated] = useState(false)
+
+  // Guest info state
+  const [guestProfiles, setGuestProfiles] = useState({})
+  const [pendingProfiles, setPendingProfiles] = useState({})
 
   useEffect(() => {
     const fetchDinner = async () => {
@@ -67,13 +72,35 @@ export default function DinnerDetail() {
             setMyComment(userRating.comment || '')
           }
         }
-      } catch (err) {
-        // ratings collection might not exist yet
-      }
+      } catch (err) { /* ratings collection might not exist yet */ }
     }
     if (id) fetchRatings()
   }, [id, user])
 
+  // Fetch guest and pending profiles
+  useEffect(() => {
+    if (!dinner) return
+    const fetchProfiles = async (uids, setter) => {
+      const profiles = {}
+      for (const uid of uids) {
+        try {
+          const snap = await getDoc(doc(db, 'users', uid))
+          if (snap.exists()) {
+            profiles[uid] = snap.data()
+          } else {
+            profiles[uid] = { displayName: 'Nutzer', photoURL: '' }
+          }
+        } catch (e) {
+          profiles[uid] = { displayName: 'Nutzer', photoURL: '' }
+        }
+      }
+      setter(profiles)
+    }
+    if (dinner.guests?.length) fetchProfiles(dinner.guests, setGuestProfiles)
+    if (dinner.pendingGuests?.length) fetchProfiles(dinner.pendingGuests, setPendingProfiles)
+  }, [dinner?.guests, dinner?.pendingGuests])
+
+  // Direct join (no approval needed)
   const handleJoin = async () => {
     if (!user) { setShowLogin(true); return }
     setJoining(true)
@@ -83,6 +110,20 @@ export default function DinnerDetail() {
       showToast('Du nimmst jetzt am Dinner teil! 🎉', 'success')
     } catch (err) {
       showToast('Fehler beim Beitreten.', 'error')
+    }
+    setJoining(false)
+  }
+
+  // Request to join (approval needed)
+  const handleRequestJoin = async () => {
+    if (!user) { setShowLogin(true); return }
+    setJoining(true)
+    try {
+      await updateDoc(doc(db, 'dinners', id), { pendingGuests: arrayUnion(user.uid) })
+      setDinner(prev => ({ ...prev, pendingGuests: [...(prev.pendingGuests || []), user.uid] }))
+      showToast('Anfrage gesendet! Der Host wird benachrichtigt.', 'success')
+    } catch (err) {
+      showToast('Fehler beim Senden der Anfrage.', 'error')
     }
     setJoining(false)
   }
@@ -97,6 +138,50 @@ export default function DinnerDetail() {
       showToast('Fehler beim Verlassen.', 'error')
     }
     setJoining(false)
+  }
+
+  const handleCancelRequest = async () => {
+    setJoining(true)
+    try {
+      await updateDoc(doc(db, 'dinners', id), { pendingGuests: arrayRemove(user.uid) })
+      setDinner(prev => ({ ...prev, pendingGuests: (prev.pendingGuests || []).filter(g => g !== user.uid) }))
+      showToast('Anfrage zurückgezogen.', 'info')
+    } catch (err) {
+      showToast('Fehler beim Zurückziehen.', 'error')
+    }
+    setJoining(false)
+  }
+
+  // Host approves a guest
+  const handleApprove = async (guestUid) => {
+    try {
+      await updateDoc(doc(db, 'dinners', id), {
+        pendingGuests: arrayRemove(guestUid),
+        guests: arrayUnion(guestUid)
+      })
+      setDinner(prev => ({
+        ...prev,
+        pendingGuests: (prev.pendingGuests || []).filter(g => g !== guestUid),
+        guests: [...(prev.guests || []), guestUid]
+      }))
+      showToast('Gast angenommen!', 'success')
+    } catch (err) {
+      showToast('Fehler beim Annehmen.', 'error')
+    }
+  }
+
+  // Host rejects a guest
+  const handleReject = async (guestUid) => {
+    try {
+      await updateDoc(doc(db, 'dinners', id), { pendingGuests: arrayRemove(guestUid) })
+      setDinner(prev => ({
+        ...prev,
+        pendingGuests: (prev.pendingGuests || []).filter(g => g !== guestUid)
+      }))
+      showToast('Anfrage abgelehnt.', 'info')
+    } catch (err) {
+      showToast('Fehler beim Ablehnen.', 'error')
+    }
   }
 
   const handleSubmitRating = async () => {
@@ -129,10 +214,14 @@ export default function DinnerDetail() {
 
   const isHost = user && user.uid === dinner.hostId
   const isGuest = user && (dinner.guests || []).includes(user.uid)
+  const isPending = user && (dinner.pendingGuests || []).includes(user.uid)
   const guestCount = (dinner.guests || []).length
+  const pendingCount = (dinner.pendingGuests || []).length
   const isFull = guestCount >= dinner.maxGuests
   const past = isPastDinner(dinner)
-  const avgRating = ratings.length > 0 ? (ratings.reduce((sum, r) => sum + r.stars, 0) / ratings.length).toFixed(1) : null
+  const needsApproval = dinner.approvalRequired === true
+  const avgRating = ratings.length > 0
+    ? (ratings.reduce((sum, r) => sum + r.stars, 0) / ratings.length).toFixed(1) : null
 
   return (
     <div className="detail-page">
@@ -144,6 +233,7 @@ export default function DinnerDetail() {
         <div className="detail-header">
           <span className="dinner-card-cuisine">{dinner.cuisine}</span>
           {past && <span className="past-badge"><Star size={12} /> Vergangen</span>}
+          {needsApproval && !past && <span className="approval-badge"><Clock size={12} /> Genehmigung nötig</span>}
           <h1>{dinner.title}</h1>
           {avgRating && (
             <div className="detail-avg-rating">
@@ -168,14 +258,23 @@ export default function DinnerDetail() {
           </div>
         </div>
 
-        <span>Gehostet von <strong>{dinner.hostName}</strong></span>
+        <span>Gehostet von <Link to={`/profile/${dinner.hostId}`} className="host-link"><strong>{dinner.hostName}</strong></Link></span>
       </div>
 
+      {/* Action buttons for non-host */}
       {!isHost && !past && (
         <div className="detail-actions">
           {isGuest ? (
             <button className="btn btn-outline" onClick={handleLeave} disabled={joining}>
               {joining ? 'Wird bearbeitet...' : 'Teilnahme absagen'}
+            </button>
+          ) : isPending ? (
+            <button className="btn btn-outline" onClick={handleCancelRequest} disabled={joining}>
+              <Clock size={16} /> {joining ? 'Wird bearbeitet...' : 'Anfrage zurückziehen'}
+            </button>
+          ) : needsApproval ? (
+            <button className="btn btn-primary" onClick={handleRequestJoin} disabled={joining || isFull}>
+              <UserPlus size={16} /> {isFull ? 'Dinner ist voll' : joining ? 'Wird bearbeitet...' : 'Teilnahme anfragen'}
             </button>
           ) : (
             <button className="btn btn-primary" onClick={handleJoin} disabled={joining || isFull}>
@@ -185,13 +284,60 @@ export default function DinnerDetail() {
         </div>
       )}
 
+      {/* Host: Pending requests section */}
+      {isHost && !past && pendingCount > 0 && (
+        <div className="detail-guests-section pending-section">
+          <h3><Clock size={18} /> Offene Anfragen ({pendingCount})</h3>
+          <div className="guest-requests-list">
+            {(dinner.pendingGuests || []).map(uid => {
+              const p = pendingProfiles[uid] || {}
+              return (
+                <div key={uid} className="guest-request-item">
+                  <div className="guest-request-info">
+                    {p.photoURL ? (
+                      <img src={p.photoURL} alt="" className="guest-avatar" />
+                    ) : (
+                      <div className="guest-avatar guest-avatar-placeholder">{(p.displayName || '?')[0]}</div>
+                    )}
+                    <Link to={`/profile/${uid}`} className="guest-name-link">{p.displayName || 'Nutzer'}</Link>
+                  </div>
+                  <div className="guest-request-actions">
+                    <button className="btn-icon btn-approve" onClick={() => handleApprove(uid)} title="Annehmen">
+                      <Check size={18} />
+                    </button>
+                    <button className="btn-icon btn-reject" onClick={() => handleReject(uid)} title="Ablehnen">
+                      <X size={18} />
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Host: Confirmed guests */}
       {isHost && !past && (
         <div className="detail-guests-section">
-          <h3>Gästeliste ({guestCount})</h3>
+          <h3><Users size={18} /> Gästeliste ({guestCount})</h3>
           {guestCount === 0 ? (
             <p className="detail-no-guests">Noch keine Gäste angemeldet.</p>
           ) : (
-            <p className="detail-no-guests">Gäste sind angemeldet. Verwalte sie unter "Meine Dinner".</p>
+            <div className="guest-list">
+              {(dinner.guests || []).map(uid => {
+                const g = guestProfiles[uid] || {}
+                return (
+                  <div key={uid} className="guest-list-item">
+                    {g.photoURL ? (
+                      <img src={g.photoURL} alt="" className="guest-avatar" />
+                    ) : (
+                      <div className="guest-avatar guest-avatar-placeholder">{(g.displayName || '?')[0]}</div>
+                    )}
+                    <Link to={`/profile/${uid}`} className="guest-name-link">{g.displayName || 'Nutzer'}</Link>
+                  </div>
+                )
+              })}
+            </div>
           )}
         </div>
       )}
@@ -211,11 +357,7 @@ export default function DinnerDetail() {
                 onChange={(e) => setMyComment(e.target.value)}
                 rows={3}
               />
-              <button
-                className="btn btn-primary"
-                onClick={handleSubmitRating}
-                disabled={myRating === 0 || submittingRating}
-              >
+              <button className="btn btn-primary" onClick={handleSubmitRating} disabled={myRating === 0 || submittingRating}>
                 {submittingRating ? 'Wird gesendet...' : 'Bewertung abgeben'}
               </button>
             </div>
@@ -226,7 +368,6 @@ export default function DinnerDetail() {
               {myComment && <p className="rating-my-comment">{myComment}</p>}
             </div>
           )}
-
           {ratings.length > 0 && (
             <div className="ratings-list">
               <h4>Alle Bewertungen ({ratings.length})</h4>
@@ -245,7 +386,6 @@ export default function DinnerDetail() {
       )}
 
       {!past && <DinnerChat dinnerId={id} dinner={dinner} />}
-
       {showLogin && <LoginModal onClose={() => setShowLogin(false)}/>}
     </div>
   )
