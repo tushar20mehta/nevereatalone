@@ -1,0 +1,19 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Dinner documents
+    match /dinners/{dinnerId} {
+      // Anyone can read dinners
+      allow read: if true;
+
+      // Only authenticated users can create
+      allow create: if request.auth != null;
+
+      // Only the host can update or delete
+      allow update, delete: if request.auth != null
+        && request.auth.uid == resource.data.hostId;
+    }
+  }
+}

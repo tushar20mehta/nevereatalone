@@ -1,0 +1,21 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "dinners",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "hostId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "dinners",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "guests", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
