@@ -3,14 +3,14 @@ import { getAuth, GoogleAuthProvider } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
 import { getStorage } from 'firebase/storage'
 
-// TODO: Replace with your Firebase config from Firebase Console
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyDNiByycQvorgGnZmj6C0oWFTCF6Dkqi9E",
+  authDomain: "nevereatalone-2.firebaseapp.com",
+  projectId: "nevereatalone-2",
+  storageBucket: "nevereatalone-2.firebasestorage.app",
+  messagingSenderId: "245339629017",
+  appId: "1:245339629017:web:1052dadbd461cfd91c65c8",
+  measurementId: "G-0NK2Z23EVZ"
 }
 
 const app = initializeApp(firebaseConfig)
@@ -18,4 +18,5 @@ export const auth = getAuth(app)
 export const googleProvider = new GoogleAuthProvider()
 export const db = getFirestore(app)
 export const storage = getStorage(app)
+
 export default app

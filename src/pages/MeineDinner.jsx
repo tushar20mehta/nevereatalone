@@ -9,20 +9,16 @@ import LoginModal from '../components/LoginModal'
 
 function isPastDinner(dinner) {
   if (!dinner.date) return false
-  // Parse German date format "7. Apr. 2026" or ISO "2026-04-07" or other formats
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
   let dinnerDate
-  // Try ISO format first
   if (/^\d{4}-\d{2}-\d{2}/.test(dinner.date)) {
     dinnerDate = new Date(dinner.date)
   } else {
-    // Try parsing with Date constructor (handles many formats)
     dinnerDate = new Date(dinner.date)
   }
 
-  // If dinner has a time, combine date+time
   if (dinner.time && !isNaN(dinnerDate.getTime())) {
     const [hours, minutes] = dinner.time.split(':')
     dinnerDate.setHours(parseInt(hours) || 0, parseInt(minutes) || 0)
@@ -74,12 +70,12 @@ export default function MeineDinner() {
   }
 
   const handleDeleteAllPast = async () => {
-    const pastDinners = currentDinnersRaw.filter(isPastDinner)
-    if (pastDinners.length === 0) return
-    if (!window.confirm(`${pastDinners.length} vergangene Dinner wirklich löschen? Das kann nicht rückgängig gemacht werden.`)) return
+    const past = currentDinnersRaw.filter(isPastDinner)
+    if (past.length === 0) return
+    if (!window.confirm(`${past.length} vergangene Dinner wirklich löschen? Das kann nicht rückgängig gemacht werden.`)) return
     setDeletingPast(true)
     try {
-      await Promise.all(pastDinners.map((d) => deleteDoc(doc(db, 'dinners', d.id))))
+      await Promise.all(past.map((d) => deleteDoc(doc(db, 'dinners', d.id))))
     } catch (err) {
       alert('Fehler beim Löschen einiger Dinner.')
     }

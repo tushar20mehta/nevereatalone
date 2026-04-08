@@ -1,23 +1,21 @@
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { UtensilsCrossed } from 'lucide-react'
+import { UtensilsCrossed, LogOut } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useState, useEffect, useRef } from 'react'
 import LoginModal from './LoginModal'
 
 export default function Navbar() {
-  const { user, profilePhoto } = useAuth()
+  const { user, logout } = useAuth()
   const [showLogin, setShowLogin] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
   const menuRef = useRef(null)
 
-  // Menü schließen bei Seitenwechsel
   useEffect(() => {
     setMenuOpen(false)
   }, [location.pathname])
 
-  // Menü schließen bei Klick außerhalb
   useEffect(() => {
     function handleClickOutside(e) {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
@@ -43,50 +41,36 @@ export default function Navbar() {
               <div className="navbar-logo-icon">
                 <UtensilsCrossed size={22} />
               </div>
-              Never Eat Alone
+              <span className="navbar-logo-text">Never Eat Alone</span>
             </button>
-
             {menuOpen && (
               <div className="logo-dropdown">
-                <NavLink
-                  to="/"
-                  className={({ isActive }) => `logo-dropdown-link ${isActive ? 'active' : ''}`}
-                >
+                <NavLink to="/" className={({ isActive }) => `logo-dropdown-link ${isActive ? 'active' : ''}`}>
                   Entdecken
                 </NavLink>
-                <NavLink
-                  to="/create"
-                  className={({ isActive }) => `logo-dropdown-link ${isActive ? 'active' : ''}`}
-                >
+                <NavLink to="/create" className={({ isActive }) => `logo-dropdown-link ${isActive ? 'active' : ''}`}>
                   Hosten
                 </NavLink>
-                <NavLink
-                  to="/my-dinners"
-                  className={({ isActive }) => `logo-dropdown-link ${isActive ? 'active' : ''}`}
-                >
+                <NavLink to="/my-dinners" className={({ isActive }) => `logo-dropdown-link ${isActive ? 'active' : ''}`}>
                   Meine Dinner
                 </NavLink>
+                {user && (
+                  <NavLink to="/profile" className={({ isActive }) => `logo-dropdown-link ${isActive ? 'active' : ''}`}>
+                    Mein Profil
+                  </NavLink>
+                )}
               </div>
             )}
           </div>
 
           <div className="navbar-links">
-            <NavLink
-              to="/"
-              className={({ isActive }) => `navbar-link ${isActive ? 'active' : ''}`}
-            >
+            <NavLink to="/" className={({ isActive }) => `navbar-link ${isActive ? 'active' : ''}`}>
               Entdecken
             </NavLink>
-            <NavLink
-              to="/create"
-              className={({ isActive }) => `navbar-link ${isActive ? 'active' : ''}`}
-            >
+            <NavLink to="/create" className={({ isActive }) => `navbar-link ${isActive ? 'active' : ''}`}>
               Hosten
             </NavLink>
-            <NavLink
-              to="/my-dinners"
-              className={({ isActive }) => `navbar-link ${isActive ? 'active' : ''}`}
-            >
+            <NavLink to="/my-dinners" className={({ isActive }) => `navbar-link ${isActive ? 'active' : ''}`}>
               Meine Dinner
             </NavLink>
           </div>
@@ -94,24 +78,26 @@ export default function Navbar() {
           <div className="navbar-right">
             <div className="navbar-auth">
               {user ? (
-                <div className="user-menu" onClick={() => navigate('/profile')}>
-                  {profilePhoto ? (
-                    <img src={profilePhoto} alt="" className="user-avatar" />
-                  ) : (
-                    <div className="user-avatar" style={{
-                      background: 'var(--color-primary-bg)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: 'var(--color-primary)',
-                      fontWeight: 600,
-                      fontSize: '0.85rem'
-                    }}>
-                      {user.displayName?.[0] || user.email?.[0] || '?'}
-                    </div>
-                  )}
-                  <span className="user-name">{user.displayName || 'Benutzer'}</span>
-                </div>
+                <>
+                  <div className="user-menu user-menu-clickable" onClick={() => navigate('/profile')} title="Mein Profil">
+                    {user.photoURL ? (
+                      <img src={user.photoURL} alt="" className="user-avatar" />
+                    ) : (
+                      <div className="user-avatar" style={{
+                        background: 'var(--color-primary-bg)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: 'var(--color-primary)', fontWeight: 600, fontSize: '0.85rem'
+                      }}>
+                        {user.displayName?.[0] || user.email?.[0] || '?'}
+                      </div>
+                    )}
+                    <span className="user-name">{user.displayName || 'Benutzer'}</span>
+                  </div>
+                  <button className="btn-logout" onClick={logout}>
+                    <LogOut size={16} />
+                    <span className="logout-text">Abmelden</span>
+                  </button>
+                </>
               ) : (
                 <button className="btn btn-primary" onClick={() => setShowLogin(true)}>
                   Anmelden
@@ -121,10 +107,7 @@ export default function Navbar() {
           </div>
         </div>
       </nav>
-
-      {/* Overlay zum Schließen */}
       {menuOpen && <div className="mobile-menu-overlay" onClick={() => setMenuOpen(false)} />}
-
       {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
     </>
   )
