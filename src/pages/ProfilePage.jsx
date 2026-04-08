@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { doc, getDoc, setDoc, collection, query, where, getDocs } from 'firebase/firestore'
-import { db } from '../firebase'
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
+import { db, storage } from '../firebase'
 import { useAuth } from '../context/AuthContext'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { User, Mail, Edit3, Save, X, ChefHat, Star, Calendar, MapPin, ArrowLeft } from 'lucide-react'
+import { User, Mail, Edit3, Save, X, ChefHat, Star, Calendar, MapPin, ArrowLeft, Camera } from 'lucide-react'
 import { useToast } from '../context/ToastContext'
 import StarRating from '../components/StarRating'
 
@@ -12,15 +13,16 @@ export default function ProfilePage() {
   const { user } = useAuth()
   const { showToast } = useToast()
   const navigate = useNavigate()
+  const fileInputRef = useRef(null)
 
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
   const [hostedDinners, setHostedDinners] = useState([])
   const [avgRating, setAvgRating] = useState(null)
   const [totalRatings, setTotalRatings] = useState(0)
-
   const [form, setForm] = useState({
     bio: '',
     allergies: '',
@@ -80,9 +82,40 @@ export default function ProfilePage() {
       }
       setLoading(false)
     }
-
     fetchProfile()
   }, [profileUid, user])
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file || !user) return
+
+    // Validate file
+    if (!file.type.startsWith('image/')) {
+      showToast('Bitte wÃ¤hle ein Bild aus.', 'error')
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('Bild darf maximal 5 MB groÃ sein.', 'error')
+      return
+    }
+
+    setUploading(true)
+    try {
+      const storageRef = ref(storage, `profilePictures/${user.uid}`)
+      await uploadBytes(storageRef, file)
+      const downloadURL = await getDownloadURL(storageRef)
+
+      await setDoc(doc(db, 'users', user.uid), { photoURL: downloadURL }, { merge: true })
+      setProfile(prev => ({ ...prev, photoURL: downloadURL }))
+      showToast('Profilbild aktualisiert!', 'success')
+    } catch (err) {
+      console.error('Upload error:', err)
+      showToast('Fehler beim Hochladen.', 'error')
+    }
+    setUploading(false)
+    // Reset input so same file can be re-selected
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
 
   const handleSave = async () => {
     if (!user) return
@@ -94,7 +127,7 @@ export default function ProfilePage() {
         cuisinePreferences: form.cuisinePreferences.split(',').map(s => s.trim()).filter(Boolean),
         displayName: user.displayName || '',
         email: user.email || '',
-        photoURL: user.photoURL || ''
+        photoURL: profile?.photoURL || user.photoURL || ''
       }
       await setDoc(doc(db, 'users', user.uid), updates, { merge: true })
       setProfile(prev => ({ ...prev, ...updates }))
@@ -123,7 +156,7 @@ export default function ProfilePage() {
   return (
     <div className="profile-page">
       <button className="detail-back" onClick={() => navigate(-1)}>
-        <ArrowLeft size={18} /> Zurück
+        <ArrowLeft size={18} /> ZurÃ¼ck
       </button>
 
       <div className="profile-header">
@@ -135,7 +168,31 @@ export default function ProfilePage() {
               <User size={40} />
             </div>
           )}
+          {isOwnProfile && (
+            <>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                style={{ display: 'none' }}
+              />
+              <button
+                className="avatar-upload-overlay"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                title="Profilbild Ã¤ndern"
+              >
+                {uploading ? (
+                  <div className="spinner-small" />
+                ) : (
+                  <Camera size={18} />
+                )}
+              </button>
+            </>
+          )}
         </div>
+
         <div className="profile-header-info">
           <h1>{displayName}</h1>
           {profile?.email && isOwnProfile && (
@@ -155,6 +212,7 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
+
         {isOwnProfile && !editing && (
           <button className="btn btn-outline profile-edit-btn" onClick={() => setEditing(true)}>
             <Edit3 size={16} /> Bearbeiten
@@ -166,27 +224,27 @@ export default function ProfilePage() {
         {editing ? (
           <div className="profile-edit-form">
             <div className="form-group">
-              <label className="form-label">Über mich</label>
+              <label className="form-label">Ãber mich</label>
               <textarea
                 className="form-textarea"
-                placeholder="Erzähle etwas über dich..."
+                placeholder="ErzÃ¤hle etwas Ã¼ber dich..."
                 value={form.bio}
                 onChange={(e) => setForm(prev => ({ ...prev, bio: e.target.value }))}
                 rows={3}
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Allergien / Unverträglichkeiten</label>
+              <label className="form-label">Allergien / UnvertrÃ¤glichkeiten</label>
               <input
                 className="form-input"
-                placeholder="z.B. Laktose, Nüsse, Gluten"
+                placeholder="z.B. Laktose, NÃ¼sse, Gluten"
                 value={form.allergies}
                 onChange={(e) => setForm(prev => ({ ...prev, allergies: e.target.value }))}
               />
               <small className="form-hint">Kommagetrennt eingeben</small>
             </div>
             <div className="form-group">
-              <label className="form-label">Lieblingsküchen</label>
+              <label className="form-label">LieblingskÃ¼chen</label>
               <input
                 className="form-input"
                 placeholder="z.B. Italienisch, Japanisch, Indisch"
@@ -208,13 +266,14 @@ export default function ProfilePage() {
           <>
             {profile?.bio && (
               <div className="profile-section">
-                <h3>Über mich</h3>
+                <h3>Ãber mich</h3>
                 <p>{profile.bio}</p>
               </div>
             )}
+
             {profile?.allergies?.length > 0 && (
               <div className="profile-section">
-                <h3>Allergien / Unverträglichkeiten</h3>
+                <h3>Allergien / UnvertrÃ¤glichkeiten</h3>
                 <div className="profile-tags">
                   {profile.allergies.map((a, i) => (
                     <span key={i} className="profile-tag allergy-tag">{a}</span>
@@ -222,9 +281,10 @@ export default function ProfilePage() {
                 </div>
               </div>
             )}
+
             {profile?.cuisinePreferences?.length > 0 && (
               <div className="profile-section">
-                <h3>Lieblingsküchen</h3>
+                <h3>LieblingskÃ¼chen</h3>
                 <div className="profile-tags">
                   {profile.cuisinePreferences.map((c, i) => (
                     <span key={i} className="profile-tag cuisine-tag">{c}</span>
@@ -232,9 +292,10 @@ export default function ProfilePage() {
                 </div>
               </div>
             )}
+
             {!profile?.bio && !profile?.allergies?.length && !profile?.cuisinePreferences?.length && isOwnProfile && (
               <div className="profile-empty">
-                <p>Dein Profil ist noch leer. Klicke auf "Bearbeiten", um es auszufüllen.</p>
+                <p>Dein Profil ist noch leer. Klicke auf "Bearbeiten", um es auszufÃ¼llen.</p>
               </div>
             )}
           </>
@@ -249,7 +310,7 @@ export default function ProfilePage() {
                   <div className="profile-dinner-info">
                     <strong>{d.title}</strong>
                     <span className="profile-dinner-meta">
-                      <Calendar size={12} /> {d.date} · <MapPin size={12} /> {d.location || d.address}
+                      <Calendar size={12} /> {d.date} Â· <MapPin size={12} /> {d.location || d.address}
                     </span>
                   </div>
                   <span className="profile-dinner-cuisine">{d.cuisine}</span>
