@@ -91,11 +91,11 @@ export default function ProfilePage() {
 
     // Validate file
     if (!file.type.startsWith('image/')) {
-      showToast('Bitte wÃ¤hle ein Bild aus.', 'error')
+      showToast('Bitte wähle ein Bild aus.', 'error')
       return
     }
     if (file.size > 5 * 1024 * 1024) {
-      showToast('Bild darf maximal 5 MB groÃ sein.', 'error')
+      showToast('Bild darf maximal 5 MB groß sein.', 'error')
       return
     }
 
@@ -156,7 +156,7 @@ export default function ProfilePage() {
   return (
     <div className="profile-page">
       <button className="detail-back" onClick={() => navigate(-1)}>
-        <ArrowLeft size={18} /> ZurÃ¼ck
+        <ArrowLeft size={18} /> Zurück
       </button>
 
       <div className="profile-header">
@@ -181,7 +181,7 @@ export default function ProfilePage() {
                 className="avatar-upload-overlay"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
-                title="Profilbild Ã¤ndern"
+                title="Profilbild ändern"
               >
                 {uploading ? (
                   <div className="spinner-small" />
@@ -224,27 +224,27 @@ export default function ProfilePage() {
         {editing ? (
           <div className="profile-edit-form">
             <div className="form-group">
-              <label className="form-label">Ãber mich</label>
+              <label className="form-label">Über mich</label>
               <textarea
                 className="form-textarea"
-                placeholder="ErzÃ¤hle etwas Ã¼ber dich..."
+                placeholder="Erzähle etwas über dich..."
                 value={form.bio}
                 onChange={(e) => setForm(prev => ({ ...prev, bio: e.target.value }))}
                 rows={3}
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Allergien / UnvertrÃ¤glichkeiten</label>
+              <label className="form-label">Allergien / Unverträglichkeiten</label>
               <input
                 className="form-input"
-                placeholder="z.B. Laktose, NÃ¼sse, Gluten"
+                placeholder="z.B. Laktose, Nüsse, Gluten"
                 value={form.allergies}
                 onChange={(e) => setForm(prev => ({ ...prev, allergies: e.target.value }))}
               />
               <small className="form-hint">Kommagetrennt eingeben</small>
             </div>
             <div className="form-group">
-              <label className="form-label">LieblingskÃ¼chen</label>
+              <label className="form-label">Lieblingsküchen</label>
               <input
                 className="form-input"
                 placeholder="z.B. Italienisch, Japanisch, Indisch"
@@ -266,14 +266,14 @@ export default function ProfilePage() {
           <>
             {profile?.bio && (
               <div className="profile-section">
-                <h3>Ãber mich</h3>
+                <h3>Über mich</h3>
                 <p>{profile.bio}</p>
               </div>
             )}
 
             {profile?.allergies?.length > 0 && (
               <div className="profile-section">
-                <h3>Allergien / UnvertrÃ¤glichkeiten</h3>
+                <h3>Allergien / Unverträglichkeiten</h3>
                 <div className="profile-tags">
                   {profile.allergies.map((a, i) => (
                     <span key={i} className="profile-tag allergy-tag">{a}</span>
@@ -284,7 +284,7 @@ export default function ProfilePage() {
 
             {profile?.cuisinePreferences?.length > 0 && (
               <div className="profile-section">
-                <h3>LieblingskÃ¼chen</h3>
+                <h3>Lieblingsküchen</h3>
                 <div className="profile-tags">
                   {profile.cuisinePreferences.map((c, i) => (
                     <span key={i} className="profile-tag cuisine-tag">{c}</span>
@@ -295,7 +295,7 @@ export default function ProfilePage() {
 
             {!profile?.bio && !profile?.allergies?.length && !profile?.cuisinePreferences?.length && isOwnProfile && (
               <div className="profile-empty">
-                <p>Dein Profil ist noch leer. Klicke auf "Bearbeiten", um es auszufÃ¼llen.</p>
+                <p>Dein Profil ist noch leer. Klicke auf "Bearbeiten", um es auszufüllen.</p>
               </div>
             )}
           </>
@@ -310,7 +310,7 @@ export default function ProfilePage() {
                   <div className="profile-dinner-info">
                     <strong>{d.title}</strong>
                     <span className="profile-dinner-meta">
-                      <Calendar size={12} /> {d.date} Â· <MapPin size={12} /> {d.location || d.address}
+                      <Calendar size={12} /> {d.date} · <MapPin size={12} /> {d.location || d.address}
                     </span>
                   </div>
                   <span className="profile-dinner-cuisine">{d.cuisine}</span>
