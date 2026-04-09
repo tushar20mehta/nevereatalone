@@ -1,5 +1,5 @@
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { UtensilsCrossed, LogOut, Compass } from 'lucide-react'
+import { UtensilsCrossed, LogOut, Compass, Utensils } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useState, useEffect, useRef } from 'react'
 import LoginModal from './LoginModal'
@@ -57,6 +57,10 @@ export default function Navbar() {
                 <NavLink to="/stöbern" className={({ isActive }) => `logo-dropdown-link ${isActive ? 'active' : ''}`}>
                   <Compass size={16} style={{ marginRight: 6, verticalAlign: 'middle' }} />
                   Stöbern
+                </NavLink>
+                <NavLink to="/running-dinner" className={({ isActive }) => `logo-dropdown-link ${isActive ? 'active' : ''}`}>
+                  <Utensils size={16} style={{ marginRight: 6, verticalAlign: 'middle' }} />
+                  Running Dinner
                 </NavLink>
                 {user && (
                   <NavLink to="/profile" className={({ isActive }) => `logo-dropdown-link ${isActive ? 'active' : ''}`}>
