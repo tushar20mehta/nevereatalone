@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from 'firebase/firestore'
+import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, getDoc } from 'firebase/firestore'
 import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
 import { Send, MessageCircle } from 'lucide-react'
@@ -9,6 +9,7 @@ export default function DinnerChat({ dinnerId, dinner }) {
   const [messages, setMessages] = useState([])
   const [newMessage, setNewMessage] = useState('')
   const [sending, setSending] = useState(false)
+  const [userPhotos, setUserPhotos] = useState({})
   const messagesEndRef = useRef(null)
 
   const isParticipant = user && dinner && (
@@ -32,6 +33,27 @@ export default function DinnerChat({ dinnerId, dinner }) {
 
     return unsubscribe
   }, [dinnerId])
+
+  // Fetch profile photos for all unique users in the chat
+  useEffect(() => {
+    const userIds = [...new Set(messages.map(m => m.userId))]
+    const missing = userIds.filter(id => !(id in userPhotos))
+    if (missing.length === 0) return
+
+    const fetchPhotos = async () => {
+      const updates = {}
+      for (const uid of missing) {
+        try {
+          const snap = await getDoc(doc(db, 'users', uid))
+          updates[uid] = snap.exists() ? (snap.data().photoURL || '') : ''
+        } catch {
+          updates[uid] = ''
+        }
+      }
+      setUserPhotos(prev => ({ ...prev, ...updates }))
+    }
+    fetchPhotos()
+  }, [messages])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -107,34 +129,35 @@ export default function DinnerChat({ dinnerId, dinner }) {
             <div className="chat-date-divider">
               <span>{date}</span>
             </div>
-            {msgs.map((msg) => (
-              <div
-                key={msg.id}
-                className={`chat-message ${msg.userId === user.uid ? 'chat-message-own' : ''}`}
-              >
-                {msg.userId !== user.uid && (
+            {msgs.map((msg) => {
+              const photo = userPhotos[msg.userId] || msg.userPhoto || ''
+              return (
+                <div
+                  key={msg.id}
+                  className={`chat-message ${msg.userId === user.uid ? 'chat-message-own' : ''}`}
+                >
                   <div className="chat-message-avatar">
-                    {msg.userPhoto ? (
-                      <img src={msg.userPhoto} alt={msg.userName} />
+                    {photo ? (
+                      <img src={photo} alt={msg.userName} />
                     ) : (
                       <span>{msg.userName?.charAt(0)?.toUpperCase()}</span>
                     )}
                   </div>
-                )}
-                <div className="chat-message-content">
-                  {msg.userId !== user.uid && (
-                    <span className="chat-message-name">
-                      {msg.userName}
-                      {dinner.hostId === msg.userId && <span className="chat-host-badge">Host</span>}
-                    </span>
-                  )}
-                  <div className="chat-bubble">
-                    <p>{msg.text}</p>
-                    <span className="chat-time">{formatTime(msg.createdAt)}</span>
+                  <div className="chat-message-content">
+                    {msg.userId !== user.uid && (
+                      <span className="chat-message-name">
+                        {msg.userName}
+                        {dinner.hostId === msg.userId && <span className="chat-host-badge">Host</span>}
+                      </span>
+                    )}
+                    <div className="chat-bubble">
+                      <p>{msg.text}</p>
+                      <span className="chat-time">{formatTime(msg.createdAt)}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         ))}
         <div ref={messagesEndRef} />
