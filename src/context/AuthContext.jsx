@@ -48,6 +48,7 @@ export function AuthProvider({ children }) {
     try {
       await setPersistence(auth, browserLocalPersistence)
       await signInWithPopup(auth, googleProvider)
+      return { success: true }
     } catch (error) {
       console.error('Login fehlgeschlagen:', error)
       if (
@@ -55,14 +56,9 @@ export function AuthProvider({ children }) {
         error.code === 'auth/popup-closed-by-user' ||
         error.code === 'auth/cancelled-popup-request'
       ) {
-        // Retry once — gives Safari a second chance after user interaction
-        try {
-          await signInWithPopup(auth, googleProvider)
-        } catch (retryError) {
-          console.error('Login Retry fehlgeschlagen:', retryError)
-          alert('Bitte erlaube Pop-ups für diese Seite in deinen Browser-Einstellungen und versuche es erneut.')
-        }
+        return { success: false, reason: 'popup-blocked' }
       }
+      return { success: false, reason: 'unknown' }
     }
   }
 

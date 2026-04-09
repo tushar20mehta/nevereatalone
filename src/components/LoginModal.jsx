@@ -1,12 +1,18 @@
 import { UtensilsCrossed } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { useToast } from '../context/ToastContext'
 
 export default function LoginModal({ onClose }) {
   const { loginWithGoogle } = useAuth()
+  const { showToast } = useToast()
 
   const handleLogin = async () => {
-    await loginWithGoogle()
-    onClose()
+    const result = await loginWithGoogle()
+    if (result?.success) {
+      onClose()
+    } else if (result?.reason === 'popup-blocked') {
+      showToast('Bitte erlaube Popups für diese Seite.', 'error')
+    }
   }
 
   return (
