@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { doc, getDoc, setDoc, collection, query, where, getDocs } from 'firebase/firestore'
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
-import { db, storage } from '../firebase'
+import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { User, Mail, Edit3, Save, X, ChefHat, Star, Calendar, MapPin, ArrowLeft, Camera } from 'lucide-react'
@@ -85,35 +84,52 @@ export default function ProfilePage() {
     fetchProfile()
   }, [profileUid, user])
 
+  const compressImage = (file) => {
+    return new Promise((resolve, reject) => {
+      const img = new Image()
+      const url = URL.createObjectURL(file)
+      img.onload = () => {
+        URL.revokeObjectURL(url)
+        const canvas = document.createElement('canvas')
+        const maxSize = 200
+        let width = img.width
+        let height = img.height
+        if (width > height) {
+          if (width > maxSize) { height = Math.round(height * maxSize / width); width = maxSize }
+        } else {
+          if (height > maxSize) { width = Math.round(width * maxSize / height); height = maxSize }
+        }
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext('2d')
+        ctx.drawImage(img, 0, 0, width, height)
+        resolve(canvas.toDataURL('image/jpeg', 0.7))
+      }
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Bild konnte nicht geladen werden')) }
+      img.src = url
+    })
+  }
+
   const handleImageUpload = async (e) => {
     const file = e.target.files?.[0]
     if (!file || !user) return
 
-    // Validate file
     if (!file.type.startsWith('image/')) {
       showToast('Bitte wähle ein Bild aus.', 'error')
-      return
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      showToast('Bild darf maximal 5 MB groß sein.', 'error')
       return
     }
 
     setUploading(true)
     try {
-      const storageRef = ref(storage, `profilePictures/${user.uid}`)
-      await uploadBytes(storageRef, file)
-      const downloadURL = await getDownloadURL(storageRef)
-
-      await setDoc(doc(db, 'users', user.uid), { photoURL: downloadURL }, { merge: true })
-      setProfile(prev => ({ ...prev, photoURL: downloadURL }))
+      const base64 = await compressImage(file)
+      await setDoc(doc(db, 'users', user.uid), { photoURL: base64 }, { merge: true })
+      setProfile(prev => ({ ...prev, photoURL: base64 }))
       showToast('Profilbild aktualisiert!', 'success')
     } catch (err) {
       console.error('Upload error:', err)
       showToast('Fehler beim Hochladen.', 'error')
     }
     setUploading(false)
-    // Reset input so same file can be re-selected
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
