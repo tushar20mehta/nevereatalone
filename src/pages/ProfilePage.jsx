@@ -3,7 +3,7 @@ import { doc, getDoc, setDoc, collection, query, where, getDocs } from 'firebase
 import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { User, Mail, Edit3, Save, X, ChefHat, Star, Calendar, MapPin, ArrowLeft, Camera } from 'lucide-react'
+import { User, Mail, Edit3, Save, X, ChefHat, Star, Calendar, MapPin, ArrowLeft, Camera, Trash2 } from 'lucide-react'
 import { useToast } from '../context/ToastContext'
 import StarRating from '../components/StarRating'
 
@@ -133,6 +133,20 @@ export default function ProfilePage() {
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
+  const handleDeletePhoto = async () => {
+    if (!user) return
+    setUploading(true)
+    try {
+      await setDoc(doc(db, 'users', user.uid), { photoURL: '' }, { merge: true })
+      setProfile(prev => ({ ...prev, photoURL: '' }))
+      showToast('Profilbild entfernt.', 'success')
+    } catch (err) {
+      console.error('Delete error:', err)
+      showToast('Fehler beim Entfernen.', 'error')
+    }
+    setUploading(false)
+  }
+
   const handleSave = async () => {
     if (!user) return
     setSaving(true)
@@ -205,6 +219,16 @@ export default function ProfilePage() {
                   <Camera size={18} />
                 )}
               </button>
+              {photoURL && (
+                <button
+                  className="avatar-delete-btn"
+                  onClick={handleDeletePhoto}
+                  disabled={uploading}
+                  title="Profilbild entfernen"
+                >
+                  <Trash2 size={14} />
+                </button>
+              )}
             </>
           )}
         </div>
