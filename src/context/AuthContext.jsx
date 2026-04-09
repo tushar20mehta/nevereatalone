@@ -2,8 +2,6 @@ import { createContext, useContext, useState, useEffect } from 'react'
 import {
   onAuthStateChanged,
   signInWithPopup,
-  signInWithRedirect,
-  getRedirectResult,
   signOut,
   browserLocalPersistence,
   setPersistence
@@ -23,11 +21,7 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Set persistence to LOCAL so users stay logged in
     setPersistence(auth, browserLocalPersistence).catch(() => {})
-
-    // Handle redirect result (for when signInWithRedirect was used)
-    getRedirectResult(auth).catch(() => {})
 
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser)
@@ -52,21 +46,21 @@ export function AuthProvider({ children }) {
 
   const loginWithGoogle = async () => {
     try {
-      // Set persistence before signing in
       await setPersistence(auth, browserLocalPersistence)
       await signInWithPopup(auth, googleProvider)
     } catch (error) {
       console.error('Login fehlgeschlagen:', error)
-      // If popup was blocked (Safari/mobile), fall back to redirect
       if (
         error.code === 'auth/popup-blocked' ||
         error.code === 'auth/popup-closed-by-user' ||
         error.code === 'auth/cancelled-popup-request'
       ) {
+        // Retry once — gives Safari a second chance after user interaction
         try {
-          await signInWithRedirect(auth, googleProvider)
-        } catch (redirectError) {
-          console.error('Redirect Login fehlgeschlagen:', redirectError)
+          await signInWithPopup(auth, googleProvider)
+        } catch (retryError) {
+          console.error('Login Retry fehlgeschlagen:', retryError)
+          alert('Bitte erlaube Pop-ups für diese Seite in deinen Browser-Einstellungen und versuche es erneut.')
         }
       }
     }
