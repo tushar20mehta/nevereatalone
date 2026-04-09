@@ -12,6 +12,7 @@ import RunningDinnerPage from './pages/RunningDinnerPage'
 import RunningDinnerDetail from './pages/RunningDinnerDetail'
 import ImpressumPage from './pages/ImpressumPage'
 import DatenschutzPage from './pages/DatenschutzPage'
+import CookieBanner from './components/CookieBanner'
 
 function App() {
   return (
@@ -33,6 +34,7 @@ function App() {
             <Route path="/datenschutz" element={<DatenschutzPage />} />
           </Routes>
         </main>
+        <CookieBanner />
         <Footer />
       </div>
     </ToastProvider>
