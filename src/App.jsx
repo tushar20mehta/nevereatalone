@@ -10,6 +10,8 @@ import ProfilePage from './pages/ProfilePage'
 import StoebernPage from './pages/StoebernPage'
 import RunningDinnerPage from './pages/RunningDinnerPage'
 import RunningDinnerDetail from './pages/RunningDinnerDetail'
+import ImpressumPage from './pages/ImpressumPage'
+import DatenschutzPage from './pages/DatenschutzPage'
 
 function App() {
   return (
@@ -27,6 +29,8 @@ function App() {
             <Route path="/stöbern" element={<StoebernPage />} />
             <Route path="/running-dinner" element={<RunningDinnerPage />} />
             <Route path="/running-dinner/:id" element={<RunningDinnerDetail />} />
+            <Route path="/impressum" element={<ImpressumPage />} />
+            <Route path="/datenschutz" element={<DatenschutzPage />} />
           </Routes>
         </main>
         <Footer />

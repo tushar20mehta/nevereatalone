@@ -13,6 +13,8 @@ export default function Footer() {
           <NavLink to="/" className="footer-link">Entdecken</NavLink>
           <NavLink to="/create" className="footer-link">Hosten</NavLink>
           <NavLink to="/my-dinners" className="footer-link">Meine Dinner</NavLink>
+          <NavLink to="/impressum" className="footer-link">Impressum</NavLink>
+          <NavLink to="/datenschutz" className="footer-link">Datenschutz</NavLink>
         </div>
         <span className="footer-copy">&copy; {new Date().getFullYear()} Never Eat Alone</span>
       </div>

@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
-import { doc, getDoc, setDoc, collection, query, where, getDocs } from 'firebase/firestore'
-import { db } from '../firebase'
+import { doc, getDoc, setDoc, deleteDoc, collection, query, where, getDocs } from 'firebase/firestore'
+import { deleteUser } from 'firebase/auth'
+import { db, auth } from '../firebase'
 import { useAuth } from '../context/AuthContext'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { User, Mail, Edit3, Save, X, ChefHat, Star, Calendar, MapPin, ArrowLeft, Camera, Trash2 } from 'lucide-react'
+import { User, Mail, Edit3, Save, X, ChefHat, Star, Calendar, MapPin, ArrowLeft, Camera, Trash2, AlertTriangle } from 'lucide-react'
 import { useToast } from '../context/ToastContext'
 import StarRating from '../components/StarRating'
 
@@ -19,6 +20,8 @@ export default function ProfilePage() {
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const [hostedDinners, setHostedDinners] = useState([])
   const [avgRating, setAvgRating] = useState(null)
   const [totalRatings, setTotalRatings] = useState(0)
@@ -172,6 +175,25 @@ export default function ProfilePage() {
       showToast('Fehler beim Speichern.', 'error')
     }
     setSaving(false)
+  }
+
+  const handleDeleteAccount = async () => {
+    if (!user) return
+    setDeleting(true)
+    try {
+      await deleteDoc(doc(db, 'users', user.uid))
+      await deleteUser(auth.currentUser)
+      navigate('/')
+    } catch (err) {
+      console.error('Delete account error:', err)
+      if (err.code === 'auth/requires-recent-login') {
+        showToast('Bitte melde dich erneut an und versuche es dann nochmal.', 'error')
+      } else {
+        showToast('Fehler beim Löschen des Kontos.', 'error')
+      }
+    }
+    setDeleting(false)
+    setShowDeleteConfirm(false)
   }
 
   if (loading) return <div className="loading"><div className="spinner" /></div>
@@ -378,6 +400,26 @@ export default function ProfilePage() {
                 </Link>
               ))}
             </div>
+          </div>
+        )}
+        {isOwnProfile && (
+          <div className="profile-danger-zone">
+            <h3><AlertTriangle size={16} /> Gefahrenzone</h3>
+            {!showDeleteConfirm ? (
+              <button className="btn btn-danger" onClick={() => setShowDeleteConfirm(true)}>
+                <Trash2 size={16} /> Konto und alle Daten löschen
+              </button>
+            ) : (
+              <div className="profile-delete-confirm">
+                <p>Bist du sicher? Dein Profil, Profilbild und alle persönlichen Daten werden unwiderruflich gelöscht.</p>
+                <div className="form-actions">
+                  <button className="btn btn-danger" onClick={handleDeleteAccount} disabled={deleting}>
+                    {deleting ? 'Wird gelöscht...' : 'Endgültig löschen'}
+                  </button>
+                  <button className="btn btn-outline" onClick={() => setShowDeleteConfirm(false)}>Abbrechen</button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

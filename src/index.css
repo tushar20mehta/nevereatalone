@@ -3181,3 +3181,155 @@ input, textarea, select {
     gap: 0.5rem;
   }
 }
+
+/* ========== LEGAL PAGES ========== */
+.legal-page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+}
+
+.legal-page h1 {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.legal-subtitle {
+  color: var(--color-text-light);
+  margin-bottom: 2rem;
+}
+
+.legal-section {
+  margin-bottom: 2rem;
+}
+
+.legal-section h2 {
+  font-size: 1.1rem;
+  margin-bottom: 0.75rem;
+  color: var(--color-text);
+}
+
+.legal-section p {
+  color: var(--color-text-light);
+  line-height: 1.7;
+  margin-bottom: 0.5rem;
+}
+
+.legal-section ul {
+  list-style: none;
+  padding: 0;
+}
+
+.legal-section ul li {
+  position: relative;
+  padding-left: 1.25rem;
+  margin-bottom: 0.5rem;
+  color: var(--color-text-light);
+  line-height: 1.6;
+}
+
+.legal-section ul li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 10px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-primary);
+}
+
+.legal-updated {
+  color: var(--color-text-light);
+  font-size: 0.85rem;
+  font-style: italic;
+  margin-top: 2rem;
+}
+
+/* ========== PROFILE DANGER ZONE ========== */
+.profile-danger-zone {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-md);
+}
+
+.profile-danger-zone h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  color: #dc2626;
+  margin-bottom: 1rem;
+}
+
+.btn-danger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  border-radius: var(--radius-full);
+  font-size: 0.95rem;
+  font-weight: 500;
+  background: #dc2626;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-danger:hover {
+  background: #b91c1c;
+}
+
+.btn-danger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.profile-delete-confirm {
+  background: white;
+  padding: 1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid #fecaca;
+}
+
+.profile-delete-confirm p {
+  font-size: 0.9rem;
+  color: var(--color-text);
+  margin-bottom: 1rem;
+}
+
+/* ========== LOGIN PRIVACY CHECKBOX ========== */
+.login-privacy-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 1rem 0;
+  font-size: 0.85rem;
+  color: var(--color-text-light);
+  cursor: pointer;
+  text-align: left;
+}
+
+.login-privacy-checkbox input[type="checkbox"] {
+  margin-top: 2px;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
+.login-privacy-link {
+  color: var(--color-primary) !important;
+  text-decoration: underline !important;
+  font-weight: 500;
+}
+
+.btn-google:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
