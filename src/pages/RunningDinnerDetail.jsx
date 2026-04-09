@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
-import { doc, getDoc, collection, addDoc, onSnapshot, serverTimestamp, query, orderBy } from 'firebase/firestore'
+import { doc, getDoc, collection, addDoc, updateDoc, writeBatch, onSnapshot, serverTimestamp, query, orderBy } from 'firebase/firestore'
 import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Calendar, Clock, MapPin, Users, ArrowLeft, ChefHat, UserPlus, Check } from 'lucide-react'
+import { Calendar, Clock, MapPin, Users, ArrowLeft, ChefHat, UserPlus, Check, Shuffle } from 'lucide-react'
 import LoginModal from '../components/LoginModal'
 
 const COURSE_LABELS = {
@@ -27,6 +27,7 @@ export default function RunningDinnerDetail() {
   const [showRegister, setShowRegister] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [userTeam, setUserTeam] = useState(null)
+  const [assigning, setAssigning] = useState(false)
 
   const [form, setForm] = useState({
     partnerName: '',
@@ -37,21 +38,16 @@ export default function RunningDinnerDetail() {
     preferredCourse: 'any'
   })
 
-  // Load event
+  // Load event in real-time
   useEffect(() => {
     if (!id) return
-    const loadEvent = async () => {
-      try {
-        const snap = await getDoc(doc(db, 'runningDinners', id))
-        if (snap.exists()) {
-          setEvent({ id: snap.id, ...snap.data() })
-        }
-      } catch (err) {
-        console.error('Event load error:', err)
+    const unsubscribe = onSnapshot(doc(db, 'runningDinners', id), (snap) => {
+      if (snap.exists()) {
+        setEvent({ id: snap.id, ...snap.data() })
       }
       setLoading(false)
-    }
-    loadEvent()
+    }, () => setLoading(false))
+    return unsubscribe
   }, [id])
 
   // Load teams in real-time
@@ -123,6 +119,116 @@ export default function RunningDinnerDetail() {
     setSubmitting(false)
   }
 
+  const isOrganizer = user && event && event.organizerId === user.uid
+  const deadlinePassed = event && event.registrationDeadline && new Date(event.registrationDeadline) < new Date()
+  const canAssign = isOrganizer && deadlinePassed && event.status === 'registration' && teams.length >= 3
+
+  const addMinutes = (timeStr, minutes) => {
+    const [h, m] = timeStr.split(':').map(Number)
+    const total = h * 60 + m + minutes
+    const rh = Math.floor(total / 60) % 24
+    const rm = total % 60
+    return `${String(rh).padStart(2, '0')}:${String(rm).padStart(2, '0')}`
+  }
+
+  const handleAssignTeams = async () => {
+    if (!canAssign) return
+    setAssigning(true)
+
+    try {
+      const courses = ['appetizer', 'main', 'dessert']
+      const duration = event.courseDuration || 90
+      const startTime = event.eventTime || '18:00'
+
+      // Step (a): Assign courses respecting preferences
+      const teamsCopy = [...teams]
+      const assigned = { appetizer: [], main: [], dessert: [] }
+      const targetSize = Math.floor(teamsCopy.length / 3)
+
+      // First pass: assign teams with specific preferences
+      for (const course of courses) {
+        const preferred = teamsCopy.filter(t =>
+          t.preferredCourse === course && !Object.values(assigned).flat().includes(t)
+        )
+        for (const team of preferred) {
+          if (assigned[course].length < targetSize) {
+            assigned[course].push(team)
+          }
+        }
+      }
+
+      // Second pass: fill remaining slots with 'any' or unassigned teams
+      const alreadyAssigned = new Set(Object.values(assigned).flat().map(t => t.id))
+      const remaining = teamsCopy.filter(t => !alreadyAssigned.has(t.id))
+
+      for (const course of courses) {
+        while (assigned[course].length < targetSize && remaining.length > 0) {
+          assigned[course].push(remaining.shift())
+        }
+      }
+      // Distribute any leftover teams (when not divisible by 3)
+      while (remaining.length > 0) {
+        const minCourse = courses.reduce((a, b) => assigned[a].length <= assigned[b].length ? a : b)
+        assigned[minCourse].push(remaining.shift())
+      }
+
+      // Build a flat map of teamId -> assignedCourse
+      const courseMap = {}
+      for (const course of courses) {
+        for (const team of assigned[course]) {
+          courseMap[team.id] = course
+        }
+      }
+
+      // Step (b): Form 3er-groups (one team per course type)
+      // Build groups by cycling through each course's teams
+      const maxGroupCount = Math.max(...courses.map(c => assigned[c].length))
+      const groups = []
+      for (let i = 0; i < maxGroupCount; i++) {
+        const group = {}
+        for (const course of courses) {
+          group[course] = assigned[course][i % assigned[course].length]
+        }
+        groups.push(group)
+      }
+
+      // Step (c): Build route for each team and write to Firestore
+      const batch = writeBatch(db)
+
+      for (const team of teamsCopy) {
+        const assignedCourse = courseMap[team.id]
+        // Find which group this team belongs to
+        const myGroup = groups.find(g => Object.values(g).some(t => t.id === team.id))
+        if (!myGroup) continue
+
+        const route = courses.map((course, idx) => {
+          const hostTeam = myGroup[course]
+          const time = addMinutes(startTime, idx * duration)
+          return {
+            courseNumber: idx + 1,
+            courseName: COURSE_LABELS[course],
+            hostTeamId: hostTeam.id,
+            hostAddress: `${hostTeam.address}, ${hostTeam.plz} ${hostTeam.city}`,
+            time: `${time} Uhr`
+          }
+        })
+
+        const teamRef = doc(db, 'runningDinners', id, 'teams', team.id)
+        batch.update(teamRef, { assignedCourse, route })
+      }
+
+      // Set event status to 'assigned'
+      batch.update(doc(db, 'runningDinners', id), { status: 'assigned' })
+
+      await batch.commit()
+      showToast(`${teamsCopy.length} Teams wurden erfolgreich zugeteilt!`, 'success')
+    } catch (err) {
+      console.error('Assignment error:', err)
+      showToast('Fehler bei der Zuteilung.', 'error')
+    }
+    setAssigning(false)
+  }
+
   if (loading) return <div className="loading"><div className="spinner" /></div>
 
   if (!event) {
@@ -187,6 +293,23 @@ export default function RunningDinnerDetail() {
             <p>{event.organizerName}</p>
           </div>
         </div>
+
+        {/* Organizer: Assign Teams Button */}
+        {canAssign && (
+          <div className="rd-assign-section">
+            <p className="rd-assign-info">
+              Die Anmeldefrist ist abgelaufen. Es haben sich <strong>{teams.length} Teams</strong> angemeldet.
+              {teams.length < 3 && ' Mindestens 3 Teams sind für die Zuteilung erforderlich.'}
+            </p>
+            <button
+              className="btn btn-primary rd-assign-btn"
+              onClick={handleAssignTeams}
+              disabled={assigning || teams.length < 3}
+            >
+              <Shuffle size={18} /> {assigning ? 'Teams werden zugeteilt...' : 'Teams zuteilen'}
+            </button>
+          </div>
+        )}
 
         {/* Registration Section */}
         {isOpen() && !userTeam && (
@@ -264,8 +387,15 @@ export default function RunningDinnerDetail() {
                   <strong>Eure Route:</strong>
                   {userTeam.route.map((stop, i) => (
                     <div key={i} className="rd-route-stop">
-                      <span className="rd-route-number">{i + 1}</span>
-                      <span>{COURSE_LABELS[stop.courseNumber] || `Gang ${stop.courseNumber}`} — {stop.address} ({stop.time})</span>
+                      <span className="rd-route-number">{stop.courseNumber}</span>
+                      <div>
+                        <strong>{stop.courseName}</strong>
+                        {stop.hostTeamId === userTeam.id && <span className="rd-route-host-badge">Ihr kocht!</span>}
+                        <br />
+                        <span className="rd-route-address">{stop.hostAddress}</span>
+                        <br />
+                        <span className="rd-route-time"><Clock size={12} /> {stop.time}</span>
+                      </div>
                     </div>
                   ))}
                 </div>
