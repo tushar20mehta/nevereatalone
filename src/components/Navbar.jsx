@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from 'react'
 import LoginModal from './LoginModal'
 
 export default function Navbar() {
-  const { user, logout } = useAuth()
+  const { user, profilePhoto, logout } = useAuth()
   const [showLogin, setShowLogin] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const location = useLocation()
@@ -84,8 +84,8 @@ export default function Navbar() {
               {user ? (
                 <>
                   <div className="user-menu user-menu-clickable" onClick={() => navigate('/profile')} title="Mein Profil">
-                    {user.photoURL ? (
-                      <img src={user.photoURL} alt="" className="user-avatar" />
+                    {profilePhoto ? (
+                      <img src={profilePhoto} alt="" className="user-avatar" />
                     ) : (
                       <div className="user-avatar" style={{
                         background: 'var(--color-primary-bg)',

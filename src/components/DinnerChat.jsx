@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import { Send, MessageCircle } from 'lucide-react'
 
 export default function DinnerChat({ dinnerId, dinner }) {
-  const { user } = useAuth()
+  const { user, profilePhoto } = useAuth()
   const [messages, setMessages] = useState([])
   const [newMessage, setNewMessage] = useState('')
   const [sending, setSending] = useState(false)
@@ -70,7 +70,7 @@ export default function DinnerChat({ dinnerId, dinner }) {
         text: newMessage.trim(),
         userId: user.uid,
         userName: user.displayName || 'Anonym',
-        userPhoto: user.photoURL || null,
+        userPhoto: profilePhoto || null,
         createdAt: serverTimestamp()
       })
       setNewMessage('')

@@ -9,7 +9,7 @@ import LoginModal from '../components/LoginModal'
 const CUISINES = ['Italienisch','Asiatisch','Deutsch','Mexikanisch','Indisch','Mediterran','Vegetarisch']
 
 export default function Hosten() {
-  const { user } = useAuth()
+  const { user, profilePhoto } = useAuth()
   const navigate = useNavigate()
   const [showLogin, setShowLogin] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -37,7 +37,7 @@ export default function Hosten() {
         maxGuests: Number(form.maxGuests),
         hostId: user.uid,
         hostName: user.displayName || 'Anonym',
-        hostPhoto: user.photoURL || '',
+        hostPhoto: profilePhoto || '',
         guests: [],
         pendingGuests: [],
         createdAt: serverTimestamp()

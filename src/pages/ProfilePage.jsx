@@ -9,7 +9,7 @@ import StarRating from '../components/StarRating'
 
 export default function ProfilePage() {
   const { uid } = useParams()
-  const { user } = useAuth()
+  const { user, updateProfilePhoto } = useAuth()
   const { showToast } = useToast()
   const navigate = useNavigate()
   const fileInputRef = useRef(null)
@@ -51,7 +51,7 @@ export default function ProfilePage() {
           const initial = {
             displayName: user.displayName || '',
             email: user.email || '',
-            photoURL: user.photoURL || '',
+            photoURL: '',
             bio: '',
             allergies: [],
             cuisinePreferences: [],
@@ -126,6 +126,7 @@ export default function ProfilePage() {
       const base64 = await compressImage(file)
       await setDoc(doc(db, 'users', user.uid), { photoURL: base64 }, { merge: true })
       setProfile(prev => ({ ...prev, photoURL: base64 }))
+      updateProfilePhoto(base64)
       showToast('Profilbild aktualisiert!', 'success')
     } catch (err) {
       console.error('Upload error:', err)
@@ -141,6 +142,7 @@ export default function ProfilePage() {
     try {
       await setDoc(doc(db, 'users', user.uid), { photoURL: '' }, { merge: true })
       setProfile(prev => ({ ...prev, photoURL: '' }))
+      updateProfilePhoto(null)
       showToast('Profilbild entfernt.', 'success')
     } catch (err) {
       console.error('Delete error:', err)
@@ -160,7 +162,7 @@ export default function ProfilePage() {
         location: form.location.trim(),
         displayName: user.displayName || '',
         email: user.email || '',
-        photoURL: profile?.photoURL || user.photoURL || ''
+        photoURL: profile?.photoURL || ''
       }
       await setDoc(doc(db, 'users', user.uid), updates, { merge: true })
       setProfile(prev => ({ ...prev, ...updates }))

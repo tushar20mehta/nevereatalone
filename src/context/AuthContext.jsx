@@ -8,7 +8,8 @@ import {
   browserLocalPersistence,
   setPersistence
 } from 'firebase/auth'
-import { auth, googleProvider } from '../firebase'
+import { doc, getDoc } from 'firebase/firestore'
+import { auth, googleProvider, db } from '../firebase'
 
 const AuthContext = createContext()
 
@@ -18,6 +19,7 @@ export function useAuth() {
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
+  const [profilePhoto, setProfilePhoto] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -27,12 +29,26 @@ export function AuthProvider({ children }) {
     // Handle redirect result (for when signInWithRedirect was used)
     getRedirectResult(auth).catch(() => {})
 
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser)
+      if (currentUser) {
+        try {
+          const userDoc = await getDoc(doc(db, 'users', currentUser.uid))
+          setProfilePhoto(userDoc.exists() ? (userDoc.data().photoURL || null) : null)
+        } catch {
+          setProfilePhoto(null)
+        }
+      } else {
+        setProfilePhoto(null)
+      }
       setLoading(false)
     })
     return unsubscribe
   }, [])
+
+  const updateProfilePhoto = (url) => {
+    setProfilePhoto(url || null)
+  }
 
   const loginWithGoogle = async () => {
     try {
@@ -64,7 +80,7 @@ export function AuthProvider({ children }) {
     }
   }
 
-  const value = { user, loading, loginWithGoogle, logout }
+  const value = { user, profilePhoto, updateProfilePhoto, loading, loginWithGoogle, logout }
 
   return (
     <AuthContext.Provider value={value}>
