@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
-import { doc, getDoc, setDoc, deleteDoc, collection, query, where, getDocs } from 'firebase/firestore'
-import { deleteUser } from 'firebase/auth'
+import { doc, getDoc, setDoc, deleteDoc, updateDoc, collection, query, where, getDocs, arrayRemove, collectionGroup } from 'firebase/firestore'
+import { deleteUser, GoogleAuthProvider, reauthenticateWithPopup } from 'firebase/auth'
 import { db, auth } from '../firebase'
 import { useAuth } from '../context/AuthContext'
 import { useParams, useNavigate, Link } from 'react-router-dom'
@@ -181,16 +181,71 @@ export default function ProfilePage() {
     if (!user) return
     setDeleting(true)
     try {
-      await deleteDoc(doc(db, 'users', user.uid))
+      const uid = user.uid
+
+      // 1. Delete all dinners hosted by this user
+      const hostedSnap = await getDocs(query(collection(db, 'dinners'), where('hostId', '==', uid)))
+      for (const d of hostedSnap.docs) {
+        await deleteDoc(d.ref)
+      }
+
+      // 2. Remove user from guest arrays of all dinners they joined
+      const guestSnap = await getDocs(query(collection(db, 'dinners'), where('guests', 'array-contains', uid)))
+      for (const d of guestSnap.docs) {
+        await updateDoc(d.ref, { guests: arrayRemove(uid) })
+      }
+
+      // 3. Delete running dinner teams where user is member
+      const allEventsSnap = await getDocs(collection(db, 'runningDinners'))
+      for (const event of allEventsSnap.docs) {
+        const teamsSnap = await getDocs(collection(db, 'runningDinners', event.id, 'teams'))
+        for (const team of teamsSnap.docs) {
+          const data = team.data()
+          if (data.member1Id === uid || data.member2Id === uid) {
+            await deleteDoc(team.ref)
+          }
+        }
+      }
+
+      // 4. Delete running dinner events organized by this user
+      const organizedSnap = await getDocs(query(collection(db, 'runningDinners'), where('organizerId', '==', uid)))
+      for (const d of organizedSnap.docs) {
+        // Delete all teams in this event first
+        const teamsSnap = await getDocs(collection(db, 'runningDinners', d.id, 'teams'))
+        for (const team of teamsSnap.docs) {
+          await deleteDoc(team.ref)
+        }
+        await deleteDoc(d.ref)
+      }
+
+      // 5. Delete user document
+      await deleteDoc(doc(db, 'users', uid))
+
+      // 6. Re-authenticate and delete Firebase Auth account
+      try {
+        const provider = new GoogleAuthProvider()
+        await reauthenticateWithPopup(auth.currentUser, provider)
+      } catch (reauthErr) {
+        if (reauthErr.code === 'auth/popup-blocked') {
+          showToast('Bitte erlaube Popups für diese Seite, damit dein Konto gelöscht werden kann.', 'error')
+          setDeleting(false)
+          setShowDeleteConfirm(false)
+          return
+        }
+        if (reauthErr.code === 'auth/popup-closed-by-user' || reauthErr.code === 'auth/cancelled-popup-request') {
+          showToast('Anmeldung abgebrochen. Bitte versuche es erneut.', 'error')
+          setDeleting(false)
+          setShowDeleteConfirm(false)
+          return
+        }
+        throw reauthErr
+      }
+
       await deleteUser(auth.currentUser)
       navigate('/')
     } catch (err) {
       console.error('Delete account error:', err)
-      if (err.code === 'auth/requires-recent-login') {
-        showToast('Bitte melde dich erneut an und versuche es dann nochmal.', 'error')
-      } else {
-        showToast('Fehler beim Löschen des Kontos.', 'error')
-      }
+      showToast('Fehler beim Löschen des Kontos.', 'error')
     }
     setDeleting(false)
     setShowDeleteConfirm(false)
