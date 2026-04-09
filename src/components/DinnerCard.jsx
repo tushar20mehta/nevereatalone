@@ -1,8 +1,25 @@
-import { Calendar, MapPin, Users } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Calendar, MapPin, Users, Instagram } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { doc, getDoc } from 'firebase/firestore'
+import { db } from '../firebase'
 
 export default function DinnerCard({ dinner }) {
   const navigate = useNavigate()
+  const [hostInstagram, setHostInstagram] = useState('')
+
+  useEffect(() => {
+    if (!dinner.hostId) return
+    const fetchHost = async () => {
+      try {
+        const snap = await getDoc(doc(db, 'users', dinner.hostId))
+        if (snap.exists() && snap.data().instagram) {
+          setHostInstagram(snap.data().instagram)
+        }
+      } catch (e) { /* ignore */ }
+    }
+    fetchHost()
+  }, [dinner.hostId])
 
   return (
     <div
@@ -28,7 +45,22 @@ export default function DinnerCard({ dinner }) {
         {dinner.maxGuests && (
           <p className="dinner-card-info"><Users size={14} /> Max. {dinner.maxGuests} Gäste</p>
         )}
-        {dinner.hostName && <p className="dinner-card-host">von {dinner.hostName}</p>}
+        {dinner.hostName && (
+          <p className="dinner-card-host">
+            von {dinner.hostName}
+            {hostInstagram && (
+              <a
+                href={`https://instagram.com/${hostInstagram}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="host-instagram-link"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Instagram size={13} />
+              </a>
+            )}
+          </p>
+        )}
       </div>
     </div>
   )

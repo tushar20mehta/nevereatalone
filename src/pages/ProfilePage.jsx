@@ -4,7 +4,7 @@ import { deleteUser, GoogleAuthProvider, reauthenticateWithPopup } from 'firebas
 import { db, auth } from '../firebase'
 import { useAuth } from '../context/AuthContext'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { User, Mail, Edit3, Save, X, ChefHat, Star, Calendar, MapPin, ArrowLeft, Camera, Trash2, AlertTriangle } from 'lucide-react'
+import { User, Mail, Edit3, Save, X, ChefHat, Star, Calendar, MapPin, ArrowLeft, Camera, Trash2, AlertTriangle, Instagram } from 'lucide-react'
 import { useToast } from '../context/ToastContext'
 import StarRating from '../components/StarRating'
 
@@ -29,7 +29,8 @@ export default function ProfilePage() {
     bio: '',
     allergies: '',
     cuisinePreferences: '',
-    location: ''
+    location: '',
+    instagram: ''
   })
 
   const profileUid = uid || user?.uid
@@ -48,7 +49,8 @@ export default function ProfilePage() {
             bio: data.bio || '',
             allergies: (data.allergies || []).join(', '),
             cuisinePreferences: (data.cuisinePreferences || []).join(', '),
-            location: data.location || ''
+            location: data.location || '',
+            instagram: data.instagram || ''
           })
         } else if (isOwnProfile && user) {
           const initial = {
@@ -163,6 +165,7 @@ export default function ProfilePage() {
         allergies: form.allergies.split(',').map(s => s.trim()).filter(Boolean),
         cuisinePreferences: form.cuisinePreferences.split(',').map(s => s.trim()).filter(Boolean),
         location: form.location.trim(),
+        instagram: form.instagram.trim().replace(/^@/, ''),
         displayName: user.displayName || '',
         email: user.email || '',
         photoURL: profile?.photoURL || ''
@@ -333,6 +336,17 @@ export default function ProfilePage() {
               <span>{profile.location}</span>
             </div>
           )}
+          {profile?.instagram && (
+            <a
+              href={`https://instagram.com/${profile.instagram}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="profile-instagram"
+            >
+              <Instagram size={14} />
+              <span>@{profile.instagram}</span>
+            </a>
+          )}
           <div className="profile-stats">
             <div className="profile-stat">
               <ChefHat size={16} />
@@ -370,6 +384,22 @@ export default function ProfilePage() {
                 onChange={(e) => setForm(prev => ({ ...prev, location: e.target.value }))}
               />
               <small className="form-hint">PLZ und/oder Stadt</small>
+            </div>
+            <div className="form-group">
+              <label className="form-label"><Instagram size={14} /> Instagram-Benutzername</label>
+              <div className="instagram-input-wrapper">
+                <span className="instagram-input-prefix">@</span>
+                <input
+                  className="form-input instagram-input"
+                  placeholder="dein_username"
+                  value={form.instagram}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/[^a-zA-Z0-9._]/g, '')
+                    setForm(prev => ({ ...prev, instagram: val }))
+                  }}
+                />
+              </div>
+              <small className="form-hint">Nur Buchstaben, Zahlen, Punkte und Unterstriche</small>
             </div>
             <div className="form-group">
               <label className="form-label">Allergien / Unverträglichkeiten</label>

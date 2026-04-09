@@ -4,7 +4,7 @@ import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { Calendar, MapPin, Users, ChefHat, ArrowLeft, Star, Check, X, Clock, UserPlus } from 'lucide-react'
+import { Calendar, MapPin, Users, ChefHat, ArrowLeft, Star, Check, X, Clock, UserPlus, Instagram } from 'lucide-react'
 import LoginModal from '../components/LoginModal'
 import DinnerChat from '../components/DinnerChat'
 import StarRating from '../components/StarRating'
@@ -42,7 +42,8 @@ export default function DinnerDetail() {
   const [submittingRating, setSubmittingRating] = useState(false)
   const [hasRated, setHasRated] = useState(false)
 
-  // Guest info state
+  // Host & guest info state
+  const [hostProfile, setHostProfile] = useState(null)
   const [guestProfiles, setGuestProfiles] = useState({})
   const [pendingProfiles, setPendingProfiles] = useState({})
 
@@ -76,6 +77,18 @@ export default function DinnerDetail() {
     }
     if (id) fetchRatings()
   }, [id, user])
+
+  // Fetch host profile for Instagram
+  useEffect(() => {
+    if (!dinner?.hostId) return
+    const fetchHost = async () => {
+      try {
+        const snap = await getDoc(doc(db, 'users', dinner.hostId))
+        if (snap.exists()) setHostProfile(snap.data())
+      } catch (e) { /* ignore */ }
+    }
+    fetchHost()
+  }, [dinner?.hostId])
 
   // Fetch guest and pending profiles
   useEffect(() => {
@@ -258,7 +271,20 @@ export default function DinnerDetail() {
           </div>
         </div>
 
-        <span>Gehostet von <Link to={`/profile/${dinner.hostId}`} className="host-link"><strong>{dinner.hostName}</strong></Link></span>
+        <span className="detail-host-line">
+          Gehostet von <Link to={`/profile/${dinner.hostId}`} className="host-link"><strong>{dinner.hostName}</strong></Link>
+          {hostProfile?.instagram && (
+            <a
+              href={`https://instagram.com/${hostProfile.instagram}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="host-instagram-link"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Instagram size={14} />
+            </a>
+          )}
+        </span>
       </div>
 
       {/* Action buttons for non-host */}

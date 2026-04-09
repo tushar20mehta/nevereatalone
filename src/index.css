@@ -3417,3 +3417,56 @@ input, textarea, select {
     width: 100%;
   }
 }
+
+/* ===== Instagram ===== */
+.profile-instagram {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-primary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.profile-instagram:hover {
+  color: var(--color-primary-hover);
+}
+
+.instagram-input-wrapper {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.instagram-input-prefix {
+  position: absolute;
+  left: 14px;
+  color: var(--color-text-light);
+  font-weight: 500;
+  pointer-events: none;
+}
+
+.instagram-input {
+  padding-left: 30px !important;
+}
+
+.host-instagram-link {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+  color: var(--color-primary);
+  transition: color 0.2s;
+  vertical-align: middle;
+}
+
+.host-instagram-link:hover {
+  color: var(--color-primary-hover);
+}
+
+.detail-host-line {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
