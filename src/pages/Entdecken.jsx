@@ -5,6 +5,7 @@ import { Search, UtensilsCrossed, Plus, Map, List } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import DinnerCard from '../components/DinnerCard'
 import DinnerMap from '../components/DinnerMap'
+import RecommendedDinners from '../components/RecommendedDinners'
 
 const CUISINES = ['Alle','Italienisch','Asiatisch','Deutsch','Mexikanisch','Indisch','Mediterran','Vegetarisch']
 
@@ -43,6 +44,8 @@ export default function Entdecken() {
           <button className="btn btn-outline" onClick={() => document.querySelector('.search-section')?.scrollIntoView({behavior:'smooth'})}><UtensilsCrossed size={18}/>Dinner entdecken</button>
         </div>
       </section>
+
+      <RecommendedDinners dinners={dinners} />
 
       <section className="search-section">
         <div className="search-bar">

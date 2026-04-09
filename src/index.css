@@ -1667,6 +1667,97 @@ input, textarea, select {
   cursor: not-allowed;
 }
 
+/* ===== Recommended Dinners ===== */
+.recommended-section {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 24px 8px;
+}
+
+.recommended-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  color: var(--color-primary);
+}
+
+.recommended-header h2 {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.recommended-scroll {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.recommended-scroll::-webkit-scrollbar {
+  height: 4px;
+}
+
+.recommended-scroll::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 4px;
+}
+
+.recommended-card {
+  min-width: 260px;
+  max-width: 280px;
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.25s;
+  scroll-snap-align: start;
+  flex-shrink: 0;
+}
+
+.recommended-card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+.recommended-card-image {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  background: var(--color-primary-bg);
+}
+
+.recommended-card-body {
+  padding: 14px 16px;
+}
+
+.recommended-card-body h3 {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin: 6px 0 8px;
+}
+
+.recommended-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.8rem;
+  color: var(--color-text-light);
+  margin-bottom: 2px;
+}
+
+.recommended-card-host {
+  font-size: 0.8rem;
+  color: var(--color-text-light);
+  margin-top: 6px;
+}
+
 /* ===== Profile Picture Upload ===== */
 .avatar-upload-overlay {
   position: absolute;
@@ -1834,6 +1925,15 @@ input, textarea, select {
   font-size: 0.95rem;
   font-weight: 600;
   color: var(--color-primary);
+  margin-bottom: 0.5rem;
+}
+
+.profile-location {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--color-text-light);
+  font-size: 0.85rem;
   margin-bottom: 0.5rem;
 }
 

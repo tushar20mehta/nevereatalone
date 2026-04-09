@@ -25,7 +25,8 @@ export default function ProfilePage() {
   const [form, setForm] = useState({
     bio: '',
     allergies: '',
-    cuisinePreferences: ''
+    cuisinePreferences: '',
+    location: ''
   })
 
   const profileUid = uid || user?.uid
@@ -43,7 +44,8 @@ export default function ProfilePage() {
           setForm({
             bio: data.bio || '',
             allergies: (data.allergies || []).join(', '),
-            cuisinePreferences: (data.cuisinePreferences || []).join(', ')
+            cuisinePreferences: (data.cuisinePreferences || []).join(', '),
+            location: data.location || ''
           })
         } else if (isOwnProfile && user) {
           const initial = {
@@ -155,6 +157,7 @@ export default function ProfilePage() {
         bio: form.bio.trim(),
         allergies: form.allergies.split(',').map(s => s.trim()).filter(Boolean),
         cuisinePreferences: form.cuisinePreferences.split(',').map(s => s.trim()).filter(Boolean),
+        location: form.location.trim(),
         displayName: user.displayName || '',
         email: user.email || '',
         photoURL: profile?.photoURL || user.photoURL || ''
@@ -245,6 +248,12 @@ export default function ProfilePage() {
               <span className="rating-count">({totalRatings} Bewertung{totalRatings !== 1 ? 'en' : ''})</span>
             </div>
           )}
+          {profile?.location && (
+            <div className="profile-location">
+              <MapPin size={14} />
+              <span>{profile.location}</span>
+            </div>
+          )}
           <div className="profile-stats">
             <div className="profile-stat">
               <ChefHat size={16} />
@@ -272,6 +281,16 @@ export default function ProfilePage() {
                 onChange={(e) => setForm(prev => ({ ...prev, bio: e.target.value }))}
                 rows={3}
               />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Standort</label>
+              <input
+                className="form-input"
+                placeholder="z.B. 80331 München"
+                value={form.location}
+                onChange={(e) => setForm(prev => ({ ...prev, location: e.target.value }))}
+              />
+              <small className="form-hint">PLZ und/oder Stadt</small>
             </div>
             <div className="form-group">
               <label className="form-label">Allergien / Unverträglichkeiten</label>
