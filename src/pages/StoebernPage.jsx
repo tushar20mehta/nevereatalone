@@ -33,6 +33,7 @@ export default function StoebernPage() {
   const [guestProfiles, setGuestProfiles] = useState({})
   const [skippedIds, setSkippedIds] = useState([])
   const [likedIds, setLikedIds] = useState([])
+  const [hostPhotos, setHostPhotos] = useState({})
 
   // Drag state
   const [dragState, setDragState] = useState({ active: false, startX: 0, startY: 0, dx: 0, dy: 0 })
@@ -67,6 +68,27 @@ export default function StoebernPage() {
     })
     return unsubscribe
   }, [])
+
+  // Load current profile photos for hosts from Firestore
+  useEffect(() => {
+    const hostIds = [...new Set(allDinners.map(d => d.hostId).filter(Boolean))]
+    const missing = hostIds.filter(id => !(id in hostPhotos))
+    if (missing.length === 0) return
+
+    const fetchPhotos = async () => {
+      const updates = {}
+      for (const uid of missing) {
+        try {
+          const snap = await getDoc(doc(db, 'users', uid))
+          updates[uid] = snap.exists() ? (snap.data().photoURL || '') : ''
+        } catch {
+          updates[uid] = ''
+        }
+      }
+      setHostPhotos(prev => ({ ...prev, ...updates }))
+    }
+    fetchPhotos()
+  }, [allDinners])
 
   // Filter dinners into swipeable cards
   useEffect(() => {
@@ -278,8 +300,8 @@ export default function StoebernPage() {
             {cards[1] && (
               <div className="stoebern-card stoebern-card-behind">
                 <div className="stoebern-card-image">
-                  {cards[1].hostPhoto ? (
-                    <img src={cards[1].hostPhoto} alt="" />
+                  {(hostPhotos[cards[1].hostId] || cards[1].hostPhoto) ? (
+                    <img src={hostPhotos[cards[1].hostId] || cards[1].hostPhoto} alt="" />
                   ) : (
                     <div className="stoebern-card-image-placeholder">
                       {cards[1].hostName?.[0] || '?'}
@@ -320,8 +342,8 @@ export default function StoebernPage() {
               )}
 
               <div className="stoebern-card-image" onClick={() => setExpandedCard(expandedCard ? null : currentDinner.id)}>
-                {currentDinner.hostPhoto ? (
-                  <img src={currentDinner.hostPhoto} alt={currentDinner.hostName} draggable={false} />
+                {(hostPhotos[currentDinner.hostId] || currentDinner.hostPhoto) ? (
+                  <img src={hostPhotos[currentDinner.hostId] || currentDinner.hostPhoto} alt={currentDinner.hostName} draggable={false} />
                 ) : (
                   <div className="stoebern-card-image-placeholder">
                     {currentDinner.hostName?.[0] || '?'}
