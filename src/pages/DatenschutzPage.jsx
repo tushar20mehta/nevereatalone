@@ -16,11 +16,9 @@ export default function DatenschutzPage() {
         <h2>1. Verantwortlicher</h2>
         <p>
           Verantwortlich für die Datenverarbeitung auf dieser Website ist:<br /><br />
-          [Dein Name]<br />
-          [Deine Adresse]<br />
-          [PLZ Ort]<br />
-          E-Mail: [Deine E-Mail]<br />
-          Telefon: [Deine Telefonnummer]
+          Tushar Mehta<br />
+          Adresse auf Anfrage per E-Mail<br /><br />
+          E-Mail: tushar20mehta@gmail.com
         </p>
       </div>
 
@@ -109,8 +107,8 @@ export default function DatenschutzPage() {
         <h2>8. Kontakt für Datenschutzanfragen</h2>
         <p>
           Bei Fragen zum Datenschutz oder zur Ausübung Ihrer Rechte wenden Sie sich bitte an:<br /><br />
-          [Dein Name]<br />
-          E-Mail: [Deine E-Mail]
+          Tushar Mehta<br />
+          E-Mail: tushar20mehta@gmail.com
         </p>
       </div>
 

@@ -16,17 +16,15 @@ export default function ImpressumPage() {
       <div className="legal-section">
         <h2>Verantwortlich</h2>
         <p>
-          [Dein Name]<br />
-          [Deine Adresse]<br />
-          [PLZ Ort]
+          Tushar Mehta<br />
+          Adresse auf Anfrage per E-Mail
         </p>
       </div>
 
       <div className="legal-section">
         <h2>Kontakt</h2>
         <p>
-          E-Mail: [Deine E-Mail]<br />
-          Telefon: [Deine Telefonnummer]
+          E-Mail: tushar20mehta@gmail.com
         </p>
       </div>
 
