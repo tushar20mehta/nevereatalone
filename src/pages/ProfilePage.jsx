@@ -221,27 +221,27 @@ export default function ProfilePage() {
       // 5. Delete user document
       await deleteDoc(doc(db, 'users', uid))
 
-      // 6. Re-authenticate and delete Firebase Auth account
+      // 6. Try deleting Auth account directly (works if login is recent enough)
       try {
-        const provider = new GoogleAuthProvider()
-        await reauthenticateWithPopup(auth.currentUser, provider)
-      } catch (reauthErr) {
-        if (reauthErr.code === 'auth/popup-blocked') {
-          showToast('Bitte erlaube Popups für diese Seite, damit dein Konto gelöscht werden kann.', 'error')
-          setDeleting(false)
-          setShowDeleteConfirm(false)
-          return
-        }
-        if (reauthErr.code === 'auth/popup-closed-by-user' || reauthErr.code === 'auth/cancelled-popup-request') {
-          showToast('Anmeldung abgebrochen. Bitte versuche es erneut.', 'error')
-          setDeleting(false)
-          setShowDeleteConfirm(false)
-          return
-        }
-        throw reauthErr
-      }
+        await deleteUser(auth.currentUser)
+      } catch (authErr) {
+        if (authErr.code !== 'auth/requires-recent-login') throw authErr
 
-      await deleteUser(auth.currentUser)
+        // 7. Login not recent enough — try re-auth via popup
+        try {
+          const provider = new GoogleAuthProvider()
+          await reauthenticateWithPopup(auth.currentUser, provider)
+          await deleteUser(auth.currentUser)
+        } catch (reauthErr) {
+          if (reauthErr.code === 'auth/popup-blocked' || reauthErr.code === 'auth/popup-closed-by-user' || reauthErr.code === 'auth/cancelled-popup-request') {
+            showToast('Bitte melde dich ab, melde dich erneut an und lösche dann dein Konto. Nach einer frischen Anmeldung ist keine zusätzliche Bestätigung nötig.', 'error')
+            setDeleting(false)
+            setShowDeleteConfirm(false)
+            return
+          }
+          throw reauthErr
+        }
+      }
       navigate('/')
     } catch (err) {
       console.error('Delete account error:', err)
