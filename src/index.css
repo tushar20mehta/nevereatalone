@@ -2307,3 +2307,406 @@ input, textarea, select {
     text-align: center;
   }
 }
+
+/* ========== STÖBERN / TINDER-STYLE CARDS ========== */
+.stoebern-page {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 2rem;
+  min-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stoebern-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.stoebern-header h1 {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  color: var(--color-text);
+  margin-bottom: 0.25rem;
+}
+
+.stoebern-header p {
+  color: var(--color-text-light);
+  font-size: 0.85rem;
+}
+
+.stoebern-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  min-height: 60vh;
+  color: var(--color-text-light);
+}
+
+.stoebern-stack {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  min-height: 520px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Card base */
+.stoebern-card {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 380px;
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+.stoebern-card-behind {
+  transform: translateX(-50%) scale(0.95);
+  opacity: 0.5;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.stoebern-card-active {
+  z-index: 1;
+  cursor: grab;
+  transform-origin: center center;
+}
+
+.stoebern-card-active:active {
+  cursor: grabbing;
+}
+
+/* Swipe indicator badges */
+.stoebern-swipe-badge {
+  position: absolute;
+  top: 20px;
+  z-index: 10;
+  padding: 0.4rem 1.2rem;
+  border-radius: var(--radius-full);
+  font-weight: 700;
+  font-size: 1.1rem;
+  letter-spacing: 1px;
+  pointer-events: none;
+}
+
+.stoebern-badge-right {
+  left: 16px;
+  background: #22c55e;
+  color: #fff;
+  border: 3px solid #16a34a;
+  transform: rotate(-15deg);
+}
+
+.stoebern-badge-left {
+  right: 16px;
+  background: #ef4444;
+  color: #fff;
+  border: 3px solid #dc2626;
+  transform: rotate(15deg);
+}
+
+.stoebern-badge-up {
+  left: 50%;
+  transform: translateX(-50%);
+  background: #eab308;
+  color: #fff;
+  border: 3px solid #ca8a04;
+}
+
+/* Card image */
+.stoebern-card-image {
+  position: relative;
+  width: 100%;
+  height: 280px;
+  background: var(--color-primary-bg);
+  overflow: hidden;
+}
+
+.stoebern-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.stoebern-card-image-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 4rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  background: var(--color-primary-bg);
+}
+
+.stoebern-card-host-name {
+  position: absolute;
+  bottom: 10px;
+  left: 12px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-full);
+  font-size: 0.85rem;
+  font-weight: 600;
+  backdrop-filter: blur(4px);
+}
+
+.stoebern-cuisine-tag {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: var(--color-primary);
+  color: #fff;
+  padding: 0.2rem 0.65rem;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* Card body */
+.stoebern-card-body {
+  padding: 1rem 1.25rem 1.25rem;
+}
+
+.stoebern-card-title {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+  color: var(--color-text);
+}
+
+.stoebern-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  font-size: 0.82rem;
+  color: var(--color-text-light);
+  margin-bottom: 0.5rem;
+}
+
+.stoebern-card-meta span {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.stoebern-card-desc {
+  font-size: 0.88rem;
+  color: var(--color-text-light);
+  line-height: 1.5;
+  margin-top: 0.25rem;
+}
+
+/* Expanded section */
+.stoebern-card-expanded {
+  cursor: default;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.stoebern-expanded-section {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--color-border-light);
+}
+
+.stoebern-guest-info {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--color-text-light);
+  margin-bottom: 0.5rem;
+}
+
+.stoebern-guest-avatars {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+
+.stoebern-guest-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--color-primary-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  border: 2px solid var(--color-white);
+  box-shadow: var(--shadow-sm);
+}
+
+.stoebern-guest-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.stoebern-approval-note {
+  font-size: 0.8rem;
+  color: var(--color-primary);
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.stoebern-detail-link {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+  padding: 0.25rem 0;
+}
+
+.stoebern-detail-link:hover {
+  text-decoration: underline;
+}
+
+.stoebern-collapse-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: none;
+  border: none;
+  color: var(--color-text-light);
+  font-size: 0.8rem;
+  cursor: pointer;
+  margin-top: 0.5rem;
+  padding: 0.25rem 0;
+}
+
+/* Action buttons */
+.stoebern-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-top: 480px;
+  padding-top: 1.5rem;
+}
+
+.stoebern-btn {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: var(--shadow-md);
+}
+
+.stoebern-btn:hover {
+  transform: scale(1.1);
+  box-shadow: var(--shadow-lg);
+}
+
+.stoebern-btn:active {
+  transform: scale(0.95);
+}
+
+.stoebern-btn-skip {
+  background: #fff;
+  color: #ef4444;
+  border: 2px solid #fecaca;
+}
+
+.stoebern-btn-skip:hover {
+  background: #fef2f2;
+}
+
+.stoebern-btn-fav {
+  background: #fff;
+  color: #eab308;
+  border: 2px solid #fef08a;
+  width: 50px;
+  height: 50px;
+}
+
+.stoebern-btn-fav:hover {
+  background: #fefce8;
+}
+
+.stoebern-btn-join {
+  background: #fff;
+  color: #22c55e;
+  border: 2px solid #bbf7d0;
+}
+
+.stoebern-btn-join:hover {
+  background: #f0fdf4;
+}
+
+/* Empty state */
+.stoebern-empty {
+  text-align: center;
+  padding: 3rem 1rem;
+}
+
+.stoebern-empty-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.stoebern-empty h2 {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  margin-bottom: 0.5rem;
+  color: var(--color-text);
+}
+
+.stoebern-empty p {
+  color: var(--color-text-light);
+  margin-bottom: 1.5rem;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .stoebern-page {
+    padding: 1rem 0.5rem 1.5rem;
+  }
+
+  .stoebern-card-image {
+    height: 240px;
+  }
+
+  .stoebern-actions {
+    margin-top: 440px;
+  }
+
+  .stoebern-btn {
+    width: 54px;
+    height: 54px;
+  }
+
+  .stoebern-btn-fav {
+    width: 46px;
+    height: 46px;
+  }
+}

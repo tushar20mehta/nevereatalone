@@ -7,6 +7,7 @@ import Hosten from './pages/Hosten'
 import MeineDinner from './pages/MeineDinner'
 import DinnerDetail from './pages/DinnerDetail'
 import ProfilePage from './pages/ProfilePage'
+import StoebernPage from './pages/StoebernPage'
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
             <Route path="/dinner/:id" element={<DinnerDetail />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/profile/:uid" element={<ProfilePage />} />
+            <Route path="/stöbern" element={<StoebernPage />} />
           </Routes>
         </main>
         <Footer />
