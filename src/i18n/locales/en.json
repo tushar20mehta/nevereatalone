@@ -362,8 +362,14 @@
     "section7Title": "7. Retention period",
     "section7Text1": "Your personal data is stored as long as your user account exists. When your account is deleted, all associated data (profile, photo, preferences, location) is immediately deleted.",
     "section7Text2": "Created dinner entries and chat messages may remain in anonymized form after account deletion, if required for the platform's function for other participants.",
-    "section8Title": "8. Contact for privacy inquiries",
-    "section8Text": "For questions about privacy or to exercise your rights, please contact:",
+    "section8Title": "8. Google reCAPTCHA and Firebase App Check",
+    "section8Text1": "To protect against abuse, automated access (bots) and spam, we use Firebase App Check together with Google reCAPTCHA v3. The provider is Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Ireland (parent company: Google LLC, 1600 Amphitheatre Parkway, Mountain View, CA 94043, USA).",
+    "section8Text2": "reCAPTCHA analyses various characteristics of your behaviour on the website in the background (e.g. IP address, time spent on the site, mouse movements, browser and device information) and sets cookies for this purpose. The collected data is transmitted to Google and processed there. You are not specifically informed when an analysis takes place, other than through this privacy policy.",
+    "section8Text3": "The legal basis for processing is Art. 6(1)(f) GDPR. Our legitimate interest lies in protecting our web application from abuse and automated attacks and in ensuring the stability and security of our services.",
+    "section8Text4": "A transfer of personal data to the USA cannot be ruled out. Google is certified under the EU-US Data Privacy Framework, which ensures an adequate level of data protection.",
+    "section8Text5": "For more information, please see the <0>Google Privacy Policy</0> and the <1>reCAPTCHA Terms of Service</1>.",
+    "section9Title": "9. Contact for privacy inquiries",
+    "section9Text": "For questions about privacy or to exercise your rights, please contact:",
     "lastUpdated": "As of April 2026"
   },
   "countries": {

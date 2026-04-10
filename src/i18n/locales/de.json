@@ -362,8 +362,14 @@
     "section7Title": "7. Speicherdauer",
     "section7Text1": "Ihre personenbezogenen Daten werden gespeichert, solange Ihr Benutzerkonto besteht. Bei Löschung des Kontos werden alle zugehörigen Daten (Profil, Profilbild, Präferenzen, Standort) unverzüglich gelöscht.",
     "section7Text2": "Erstellte Dinner-Einträge und Chat-Nachrichten können nach Kontolöschung in anonymisierter Form bestehen bleiben, sofern sie für die Funktion der Plattform für andere Teilnehmer erforderlich sind.",
-    "section8Title": "8. Kontakt für Datenschutzanfragen",
-    "section8Text": "Bei Fragen zum Datenschutz oder zur Ausübung Ihrer Rechte wenden Sie sich bitte an:",
+    "section8Title": "8. Google reCAPTCHA und Firebase App Check",
+    "section8Text1": "Zum Schutz vor missbräuchlicher Nutzung, automatisierten Zugriffen (Bots) und Spam setzen wir Firebase App Check in Verbindung mit Google reCAPTCHA v3 ein. Anbieter ist die Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irland (Mutterunternehmen: Google LLC, 1600 Amphitheatre Parkway, Mountain View, CA 94043, USA).",
+    "section8Text2": "reCAPTCHA analysiert im Hintergrund verschiedene Merkmale Ihres Verhaltens auf der Website (z. B. IP-Adresse, Verweildauer, Mausbewegungen, Informationen zu Browser und Gerät) und setzt hierfür Cookies. Die erhobenen Daten werden an Google übermittelt und dort verarbeitet. Sie werden nicht darüber informiert, dass eine Analyse stattfindet, außer durch diese Datenschutzerklärung.",
+    "section8Text3": "Rechtsgrundlage für die Verarbeitung ist Art. 6 Abs. 1 lit. f DSGVO. Unser berechtigtes Interesse besteht im Schutz unserer Webanwendung vor Missbrauch und automatisierten Angriffen sowie in der Gewährleistung der Stabilität und Sicherheit unserer Dienste.",
+    "section8Text4": "Eine Übermittlung personenbezogener Daten in die USA kann nicht ausgeschlossen werden. Google ist unter dem EU-US Data Privacy Framework zertifiziert, wodurch ein angemessenes Datenschutzniveau gewährleistet wird.",
+    "section8Text5": "Weitere Informationen finden Sie in der <0>Datenschutzerklärung von Google</0> sowie in den <1>Nutzungsbedingungen von reCAPTCHA</1>.",
+    "section9Title": "9. Kontakt für Datenschutzanfragen",
+    "section9Text": "Bei Fragen zum Datenschutz oder zur Ausübung Ihrer Rechte wenden Sie sich bitte an:",
     "lastUpdated": "Stand: April 2026"
   },
   "countries": {

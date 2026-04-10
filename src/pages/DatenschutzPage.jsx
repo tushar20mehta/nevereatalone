@@ -85,8 +85,25 @@ export default function DatenschutzPage() {
 
       <div className="legal-section">
         <h2>{t('privacy.section8Title')}</h2>
+        <p>{t('privacy.section8Text1')}</p>
+        <p>{t('privacy.section8Text2')}</p>
+        <p>{t('privacy.section8Text3')}</p>
+        <p>{t('privacy.section8Text4')}</p>
         <p>
-          {t('privacy.section8Text')}<br /><br />
+          <Trans
+            i18nKey="privacy.section8Text5"
+            components={[
+              <a key="google-privacy" href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">_</a>,
+              <a key="recaptcha-tos" href="https://policies.google.com/terms" target="_blank" rel="noopener noreferrer">_</a>,
+            ]}
+          />
+        </p>
+      </div>
+
+      <div className="legal-section">
+        <h2>{t('privacy.section9Title')}</h2>
+        <p>
+          {t('privacy.section9Text')}<br /><br />
           Tushar Mehta<br />
           E-Mail: tushar20mehta@gmail.com
         </p>
