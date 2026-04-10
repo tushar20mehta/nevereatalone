@@ -5,9 +5,11 @@ import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import { useNavigate } from 'react-router-dom'
 import { Calendar, MapPin, Users, Plus, X, Clock, ChefHat } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import LoginModal from '../components/LoginModal'
 
 export default function RunningDinnerPage() {
+  const { t, i18n } = useTranslation()
   const { user } = useAuth()
   const { showToast } = useToast()
   const navigate = useNavigate()
@@ -57,7 +59,7 @@ export default function RunningDinnerPage() {
     e.preventDefault()
     if (!user) { setShowLogin(true); return }
     if (!form.title || !form.city || !form.date || !form.registrationDeadline) {
-      showToast('Bitte fülle alle Pflichtfelder aus.', 'error')
+      showToast(t('runningDinner.fillRequired'), 'error')
       return
     }
 
@@ -72,23 +74,24 @@ export default function RunningDinnerPage() {
         courseDuration: Number(form.courseDuration) || 90,
         description: form.description.trim(),
         organizerId: user.uid,
-        organizerName: user.displayName || 'Anonym',
+        organizerName: user.displayName || t('common.anonymous'),
         status: 'registration',
         createdAt: serverTimestamp()
       })
-      showToast('Running Dinner erstellt!', 'success')
+      showToast(t('runningDinner.createdSuccess'), 'success')
       setShowCreate(false)
       setForm({ title: '', city: '', date: '', registrationDeadline: '', eventTime: '18:00', courseDuration: 90, description: '' })
     } catch (err) {
       console.error('Create error:', err)
-      showToast('Fehler beim Erstellen.', 'error')
+      showToast(t('runningDinner.createError'), 'error')
     }
     setSubmitting(false)
   }
 
   const formatDate = (dateStr) => {
     if (!dateStr) return ''
-    return new Date(dateStr).toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric' })
+    const locale = i18n.language === 'en' ? 'en-US' : 'de-DE'
+    return new Date(dateStr).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' })
   }
 
   const isOpen = (event) => {
@@ -100,13 +103,13 @@ export default function RunningDinnerPage() {
   return (
     <div className="rd-page">
       <div className="rd-hero">
-        <h1>Running Dinner</h1>
-        <p>3 Gänge, 3 Orte, 1 Abend. Melde dich als Team an und erlebt zusammen ein kulinarisches Abenteuer durch eure Stadt.</p>
+        <h1>{t('runningDinner.title')}</h1>
+        <p>{t('runningDinner.subtitle')}</p>
         <button
           className="btn btn-primary"
           onClick={() => user ? setShowCreate(true) : setShowLogin(true)}
         >
-          <Plus size={18} /> Event erstellen
+          <Plus size={18} /> {t('runningDinner.createEvent')}
         </button>
       </div>
 
@@ -115,8 +118,8 @@ export default function RunningDinnerPage() {
       ) : events.length === 0 ? (
         <div className="empty-state">
           <div className="empty-state-icon"><ChefHat size={32} /></div>
-          <h3>Noch keine Running Dinner</h3>
-          <p>Erstelle das erste Running Dinner Event!</p>
+          <h3>{t('runningDinner.empty')}</h3>
+          <p>{t('runningDinner.emptySubtitle')}</p>
         </div>
       ) : (
         <div className="rd-grid">
@@ -128,19 +131,19 @@ export default function RunningDinnerPage() {
             >
               <div className="rd-card-status">
                 {isOpen(event) ? (
-                  <span className="rd-badge rd-badge-open">Anmeldung offen</span>
+                  <span className="rd-badge rd-badge-open">{t('runningDinner.registrationOpen')}</span>
                 ) : event.status === 'assigned' ? (
-                  <span className="rd-badge rd-badge-assigned">Teams zugeteilt</span>
+                  <span className="rd-badge rd-badge-assigned">{t('runningDinner.teamsAssigned')}</span>
                 ) : (
-                  <span className="rd-badge rd-badge-closed">Abgeschlossen</span>
+                  <span className="rd-badge rd-badge-closed">{t('runningDinner.closed')}</span>
                 )}
               </div>
               <h3 className="rd-card-title">{event.title}</h3>
               <div className="rd-card-meta">
                 <span><MapPin size={14} /> {event.city}</span>
                 <span><Calendar size={14} /> {formatDate(event.date)}</span>
-                <span><Clock size={14} /> {event.eventTime} Uhr</span>
-                <span><Users size={14} /> {teamCounts[event.id] || 0} Teams</span>
+                <span><Clock size={14} /> {event.eventTime}</span>
+                <span><Users size={14} /> {teamCounts[event.id] || 0} {t('runningDinner.teams')}</span>
               </div>
               {event.description && (
                 <p className="rd-card-desc">
@@ -148,7 +151,7 @@ export default function RunningDinnerPage() {
                 </p>
               )}
               {isOpen(event) && event.registrationDeadline && (
-                <p className="rd-card-deadline">Anmeldeschluss: {formatDate(event.registrationDeadline)}</p>
+                <p className="rd-card-deadline">{t('runningDinner.deadline')}: {formatDate(event.registrationDeadline)}</p>
               )}
             </div>
           ))}
@@ -160,47 +163,47 @@ export default function RunningDinnerPage() {
         <div className="modal-overlay" onClick={() => setShowCreate(false)}>
           <div className="modal rd-create-modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Running Dinner erstellen</h2>
+              <h2>{t('runningDinner.createTitle')}</h2>
               <button className="modal-close" onClick={() => setShowCreate(false)}><X size={20} /></button>
             </div>
             <form onSubmit={handleCreate}>
               <div className="form-group">
-                <label className="form-label">Titel *</label>
-                <input className="form-input" name="title" value={form.title} onChange={handleChange} placeholder="z.B. Running Dinner München Sommer 2026" required />
+                <label className="form-label">{t('runningDinner.eventTitle')} *</label>
+                <input className="form-input" name="title" value={form.title} onChange={handleChange} placeholder={t('runningDinner.eventTitlePlaceholder')} required />
               </div>
               <div className="form-row">
                 <div className="form-group">
-                  <label className="form-label">Stadt *</label>
-                  <input className="form-input" name="city" value={form.city} onChange={handleChange} placeholder="z.B. München" required />
+                  <label className="form-label">{t('runningDinner.city')} *</label>
+                  <input className="form-input" name="city" value={form.city} onChange={handleChange} placeholder={t('runningDinner.cityPlaceholder')} required />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Datum *</label>
+                  <label className="form-label">{t('runningDinner.date')} *</label>
                   <input className="form-input" type="date" name="date" value={form.date} onChange={handleChange} required />
                 </div>
               </div>
               <div className="form-row">
                 <div className="form-group">
-                  <label className="form-label">Anmeldefrist *</label>
+                  <label className="form-label">{t('runningDinner.registrationDeadline')} *</label>
                   <input className="form-input" type="date" name="registrationDeadline" value={form.registrationDeadline} onChange={handleChange} required />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Startzeit</label>
+                  <label className="form-label">{t('runningDinner.startTime')}</label>
                   <input className="form-input" type="time" name="eventTime" value={form.eventTime} onChange={handleChange} />
                 </div>
               </div>
               <div className="form-group">
-                <label className="form-label">Dauer pro Gang (Minuten)</label>
+                <label className="form-label">{t('runningDinner.courseDuration')}</label>
                 <input className="form-input" type="number" name="courseDuration" value={form.courseDuration} onChange={handleChange} min="30" max="180" />
               </div>
               <div className="form-group">
-                <label className="form-label">Beschreibung</label>
-                <textarea className="form-textarea" name="description" value={form.description} onChange={handleChange} placeholder="Erzähle den Teilnehmern mehr über das Event..." rows={3} />
+                <label className="form-label">{t('runningDinner.description')}</label>
+                <textarea className="form-textarea" name="description" value={form.description} onChange={handleChange} placeholder={t('runningDinner.descriptionPlaceholder')} rows={3} />
               </div>
               <div className="form-actions">
                 <button type="submit" className="btn btn-primary" disabled={submitting}>
-                  {submitting ? 'Wird erstellt...' : 'Event erstellen'}
+                  {submitting ? t('runningDinner.creating') : t('runningDinner.create')}
                 </button>
-                <button type="button" className="btn btn-outline" onClick={() => setShowCreate(false)}>Abbrechen</button>
+                <button type="button" className="btn btn-outline" onClick={() => setShowCreate(false)}>{t('common.cancel')}</button>
               </div>
             </form>
           </div>

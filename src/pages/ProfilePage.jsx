@@ -6,9 +6,12 @@ import { useAuth } from '../context/AuthContext'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { User, Mail, Edit3, Save, X, ChefHat, Star, Calendar, MapPin, ArrowLeft, Camera, Trash2, AlertTriangle, Instagram } from 'lucide-react'
 import { useToast } from '../context/ToastContext'
+import { useTranslation } from 'react-i18next'
 import StarRating from '../components/StarRating'
+import { COUNTRY_CODES, ADDRESS_PLACEHOLDERS } from '../utils/countries'
 
 export default function ProfilePage() {
+  const { t } = useTranslation()
   const { uid } = useParams()
   const { user, updateProfilePhoto } = useAuth()
   const { showToast } = useToast()
@@ -29,7 +32,8 @@ export default function ProfilePage() {
     bio: '',
     allergies: '',
     cuisinePreferences: '',
-    location: '',
+    country: 'DE',
+    address: '',
     instagram: ''
   })
 
@@ -45,11 +49,22 @@ export default function ProfilePage() {
         if (snap.exists()) {
           const data = snap.data()
           setProfile(data)
+          // Backwards compat: legacy had separate street/plz/city or a single `location` field
+          let legacyAddress = data.address || ''
+          if (!legacyAddress && (data.street || data.plz || data.city)) {
+            const parts = []
+            if (data.street) parts.push(data.street)
+            const line2 = [data.plz, data.city].filter(Boolean).join(' ')
+            if (line2) parts.push(line2)
+            legacyAddress = parts.join('\n')
+          }
+          if (!legacyAddress && data.location) legacyAddress = data.location
           setForm({
             bio: data.bio || '',
             allergies: (data.allergies || []).join(', '),
             cuisinePreferences: (data.cuisinePreferences || []).join(', '),
-            location: data.location || '',
+            country: data.country || 'DE',
+            address: legacyAddress,
             instagram: data.instagram || ''
           })
         } else if (isOwnProfile && user) {
@@ -112,7 +127,7 @@ export default function ProfilePage() {
         ctx.drawImage(img, 0, 0, width, height)
         resolve(canvas.toDataURL('image/jpeg', 0.7))
       }
-      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Bild konnte nicht geladen werden')) }
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Image could not be loaded')) }
       img.src = url
     })
   }
@@ -122,7 +137,7 @@ export default function ProfilePage() {
     if (!file || !user) return
 
     if (!file.type.startsWith('image/')) {
-      showToast('Bitte wähle ein Bild aus.', 'error')
+      showToast(t('profile.pickImage'), 'error')
       return
     }
 
@@ -132,10 +147,10 @@ export default function ProfilePage() {
       await setDoc(doc(db, 'users', user.uid), { photoURL: base64 }, { merge: true })
       setProfile(prev => ({ ...prev, photoURL: base64 }))
       updateProfilePhoto(base64)
-      showToast('Profilbild aktualisiert!', 'success')
+      showToast(t('profile.photoUpdated'), 'success')
     } catch (err) {
       console.error('Upload error:', err)
-      showToast('Fehler beim Hochladen.', 'error')
+      showToast(t('profile.photoUploadError'), 'error')
     }
     setUploading(false)
     if (fileInputRef.current) fileInputRef.current.value = ''
@@ -148,10 +163,10 @@ export default function ProfilePage() {
       await setDoc(doc(db, 'users', user.uid), { photoURL: '' }, { merge: true })
       setProfile(prev => ({ ...prev, photoURL: '' }))
       updateProfilePhoto(null)
-      showToast('Profilbild entfernt.', 'success')
+      showToast(t('profile.photoRemoved'), 'success')
     } catch (err) {
       console.error('Delete error:', err)
-      showToast('Fehler beim Entfernen.', 'error')
+      showToast(t('profile.photoRemoveError'), 'error')
     }
     setUploading(false)
   }
@@ -164,7 +179,8 @@ export default function ProfilePage() {
         bio: form.bio.trim(),
         allergies: form.allergies.split(',').map(s => s.trim()).filter(Boolean),
         cuisinePreferences: form.cuisinePreferences.split(',').map(s => s.trim()).filter(Boolean),
-        location: form.location.trim(),
+        country: form.country,
+        address: form.address.trim(),
         instagram: form.instagram.trim().replace(/^@/, ''),
         displayName: user.displayName || '',
         email: user.email || '',
@@ -173,9 +189,9 @@ export default function ProfilePage() {
       await setDoc(doc(db, 'users', user.uid), updates, { merge: true })
       setProfile(prev => ({ ...prev, ...updates }))
       setEditing(false)
-      showToast('Profil gespeichert!', 'success')
+      showToast(t('profile.profileSaved'), 'success')
     } catch (err) {
-      showToast('Fehler beim Speichern.', 'error')
+      showToast(t('profile.saveError'), 'error')
     }
     setSaving(false)
   }
@@ -237,7 +253,7 @@ export default function ProfilePage() {
           await deleteUser(auth.currentUser)
         } catch (reauthErr) {
           if (reauthErr.code === 'auth/popup-blocked' || reauthErr.code === 'auth/popup-closed-by-user' || reauthErr.code === 'auth/cancelled-popup-request') {
-            showToast('Bitte melde dich ab, melde dich erneut an und lösche dann dein Konto. Nach einer frischen Anmeldung ist keine zusätzliche Bestätigung nötig.', 'error')
+            showToast(t('profile.loginAgainHint'), 'error')
             setDeleting(false)
             setShowDeleteConfirm(false)
             return
@@ -248,7 +264,7 @@ export default function ProfilePage() {
       navigate('/')
     } catch (err) {
       console.error('Delete account error:', err)
-      showToast('Fehler beim Löschen des Kontos.', 'error')
+      showToast(t('profile.deleteError'), 'error')
     }
     setDeleting(false)
     setShowDeleteConfirm(false)
@@ -259,19 +275,24 @@ export default function ProfilePage() {
   if (!profileUid) {
     return (
       <div className="empty-state" style={{ paddingTop: 120 }}>
-        <h3>Bitte melde dich an</h3>
-        <p>Du musst angemeldet sein, um dein Profil zu sehen.</p>
+        <h3>{t('profile.loginRequired')}</h3>
+        <p>{t('profile.loginToSeeProfile')}</p>
       </div>
     )
   }
 
-  const displayName = profile?.displayName || 'Nutzer'
+  const displayName = profile?.displayName || t('common.user')
   const photoURL = profile?.photoURL || ''
+  // Build combined address display (backwards compat)
+  const displayAddress = profile?.address
+    || [profile?.street, [profile?.plz, profile?.city].filter(Boolean).join(' ')].filter(Boolean).join('\n')
+    || profile?.location || ''
+  const displayCountry = profile?.country
 
   return (
     <div className="profile-page">
       <button className="detail-back" onClick={() => navigate(-1)}>
-        <ArrowLeft size={18} /> Zurück
+        <ArrowLeft size={18} /> {t('common.back')}
       </button>
 
       <div className="profile-header">
@@ -296,7 +317,7 @@ export default function ProfilePage() {
                 className="avatar-upload-overlay"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
-                title="Profilbild ändern"
+                title={t('profile.changePhoto')}
               >
                 {uploading ? (
                   <div className="spinner-small" />
@@ -309,7 +330,7 @@ export default function ProfilePage() {
                   className="avatar-delete-btn"
                   onClick={handleDeletePhoto}
                   disabled={uploading}
-                  title="Profilbild entfernen"
+                  title={t('profile.removePhoto')}
                 >
                   <Trash2 size={14} />
                 </button>
@@ -327,13 +348,16 @@ export default function ProfilePage() {
             <div className="profile-rating">
               <Star size={16} fill="#e85d04" stroke="#e85d04" />
               <span>{avgRating}</span>
-              <span className="rating-count">({totalRatings} Bewertung{totalRatings !== 1 ? 'en' : ''})</span>
+              <span className="rating-count">({t('dinner.ratingCount', { count: totalRatings })})</span>
             </div>
           )}
-          {profile?.location && (
+          {displayAddress && (
             <div className="profile-location">
               <MapPin size={14} />
-              <span>{profile.location}</span>
+              <span className="display-address">
+                {displayAddress}
+                {displayCountry && `\n${t(`countries.${displayCountry}`, { defaultValue: displayCountry })}`}
+              </span>
             </div>
           )}
           {profile?.instagram && (
@@ -350,14 +374,14 @@ export default function ProfilePage() {
           <div className="profile-stats">
             <div className="profile-stat">
               <ChefHat size={16} />
-              <span>{hostedDinners.length} Dinner gehostet</span>
+              <span>{t('profile.dinnersHosted', { count: hostedDinners.length })}</span>
             </div>
           </div>
         </div>
 
         {isOwnProfile && !editing && (
           <button className="btn btn-outline profile-edit-btn" onClick={() => setEditing(true)}>
-            <Edit3 size={16} /> Bearbeiten
+            <Edit3 size={16} /> {t('profile.edit')}
           </button>
         )}
       </div>
@@ -366,32 +390,47 @@ export default function ProfilePage() {
         {editing ? (
           <div className="profile-edit-form">
             <div className="form-group">
-              <label className="form-label">Über mich</label>
+              <label className="form-label">{t('profile.about')}</label>
               <textarea
                 className="form-textarea"
-                placeholder="Erzähle etwas über dich..."
+                placeholder={t('profile.aboutPlaceholder')}
                 value={form.bio}
                 onChange={(e) => setForm(prev => ({ ...prev, bio: e.target.value }))}
                 rows={3}
               />
             </div>
-            <div className="form-group">
-              <label className="form-label">Standort</label>
-              <input
-                className="form-input"
-                placeholder="z.B. 80331 München"
-                value={form.location}
-                onChange={(e) => setForm(prev => ({ ...prev, location: e.target.value }))}
-              />
-              <small className="form-hint">PLZ und/oder Stadt</small>
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">{t('profile.country')}</label>
+                <select
+                  className="form-select"
+                  value={form.country}
+                  onChange={(e) => setForm(prev => ({ ...prev, country: e.target.value }))}
+                >
+                  {COUNTRY_CODES.map(code => (
+                    <option key={code} value={code}>{t(`countries.${code}`)}</option>
+                  ))}
+                </select>
+              </div>
             </div>
             <div className="form-group">
-              <label className="form-label"><Instagram size={14} /> Instagram-Benutzername</label>
+              <label className="form-label">{t('profile.address')}</label>
+              <textarea
+                className="form-textarea address-textarea"
+                placeholder={ADDRESS_PLACEHOLDERS[form.country] || ADDRESS_PLACEHOLDERS.OTHER}
+                value={form.address}
+                onChange={(e) => setForm(prev => ({ ...prev, address: e.target.value }))}
+                rows={3}
+              />
+              <small className="form-hint">{t('profile.addressHint')}</small>
+            </div>
+            <div className="form-group">
+              <label className="form-label"><Instagram size={14} /> {t('profile.instagram')}</label>
               <div className="instagram-input-wrapper">
                 <span className="instagram-input-prefix">@</span>
                 <input
                   className="form-input instagram-input"
-                  placeholder="dein_username"
+                  placeholder="your_username"
                   value={form.instagram}
                   onChange={(e) => {
                     const val = e.target.value.replace(/[^a-zA-Z0-9._]/g, '')
@@ -399,34 +438,34 @@ export default function ProfilePage() {
                   }}
                 />
               </div>
-              <small className="form-hint">Nur Buchstaben, Zahlen, Punkte und Unterstriche</small>
+              <small className="form-hint">{t('profile.instagramHint')}</small>
             </div>
             <div className="form-group">
-              <label className="form-label">Allergien / Unverträglichkeiten</label>
+              <label className="form-label">{t('profile.allergies')}</label>
               <input
                 className="form-input"
-                placeholder="z.B. Laktose, Nüsse, Gluten"
+                placeholder={t('profile.allergiesPlaceholder')}
                 value={form.allergies}
                 onChange={(e) => setForm(prev => ({ ...prev, allergies: e.target.value }))}
               />
-              <small className="form-hint">Kommagetrennt eingeben</small>
+              <small className="form-hint">{t('profile.commaSeparated')}</small>
             </div>
             <div className="form-group">
-              <label className="form-label">Lieblingsküchen</label>
+              <label className="form-label">{t('profile.cuisinePrefs')}</label>
               <input
                 className="form-input"
-                placeholder="z.B. Italienisch, Japanisch, Indisch"
+                placeholder={t('profile.cuisinePrefsPlaceholder')}
                 value={form.cuisinePreferences}
                 onChange={(e) => setForm(prev => ({ ...prev, cuisinePreferences: e.target.value }))}
               />
-              <small className="form-hint">Kommagetrennt eingeben</small>
+              <small className="form-hint">{t('profile.commaSeparated')}</small>
             </div>
             <div className="profile-edit-actions">
               <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
-                <Save size={16} /> {saving ? 'Wird gespeichert...' : 'Speichern'}
+                <Save size={16} /> {saving ? t('common.saving') : t('common.save')}
               </button>
               <button className="btn btn-outline" onClick={() => setEditing(false)}>
-                <X size={16} /> Abbrechen
+                <X size={16} /> {t('common.cancel')}
               </button>
             </div>
           </div>
@@ -434,14 +473,14 @@ export default function ProfilePage() {
           <>
             {profile?.bio && (
               <div className="profile-section">
-                <h3>Über mich</h3>
+                <h3>{t('profile.about')}</h3>
                 <p>{profile.bio}</p>
               </div>
             )}
 
             {profile?.allergies?.length > 0 && (
               <div className="profile-section">
-                <h3>Allergien / Unverträglichkeiten</h3>
+                <h3>{t('profile.allergies')}</h3>
                 <div className="profile-tags">
                   {profile.allergies.map((a, i) => (
                     <span key={i} className="profile-tag allergy-tag">{a}</span>
@@ -452,7 +491,7 @@ export default function ProfilePage() {
 
             {profile?.cuisinePreferences?.length > 0 && (
               <div className="profile-section">
-                <h3>Lieblingsküchen</h3>
+                <h3>{t('profile.cuisinePrefs')}</h3>
                 <div className="profile-tags">
                   {profile.cuisinePreferences.map((c, i) => (
                     <span key={i} className="profile-tag cuisine-tag">{c}</span>
@@ -463,7 +502,7 @@ export default function ProfilePage() {
 
             {!profile?.bio && !profile?.allergies?.length && !profile?.cuisinePreferences?.length && isOwnProfile && (
               <div className="profile-empty">
-                <p>Dein Profil ist noch leer. Klicke auf "Bearbeiten", um es auszufüllen.</p>
+                <p>{t('profile.empty')}</p>
               </div>
             )}
           </>
@@ -471,7 +510,7 @@ export default function ProfilePage() {
 
         {hostedDinners.length > 0 && (
           <div className="profile-section">
-            <h3><ChefHat size={18} /> Gehostete Dinner</h3>
+            <h3><ChefHat size={18} /> {t('profile.hostedDinners')}</h3>
             <div className="profile-dinners-list">
               {hostedDinners.map(d => (
                 <Link key={d.id} to={`/dinner/${d.id}`} className="profile-dinner-item">
@@ -489,19 +528,19 @@ export default function ProfilePage() {
         )}
         {isOwnProfile && (
           <div className="profile-danger-zone">
-            <h3><AlertTriangle size={16} /> Gefahrenzone</h3>
+            <h3><AlertTriangle size={16} /> {t('profile.dangerZone')}</h3>
             {!showDeleteConfirm ? (
               <button className="btn btn-danger" onClick={() => setShowDeleteConfirm(true)}>
-                <Trash2 size={16} /> Konto und alle Daten löschen
+                <Trash2 size={16} /> {t('profile.deleteAccount')}
               </button>
             ) : (
               <div className="profile-delete-confirm">
-                <p>Bist du sicher? Dein Profil, Profilbild und alle persönlichen Daten werden unwiderruflich gelöscht.</p>
+                <p>{t('profile.deleteConfirm')}</p>
                 <div className="form-actions">
                   <button className="btn btn-danger" onClick={handleDeleteAccount} disabled={deleting}>
-                    {deleting ? 'Wird gelöscht...' : 'Endgültig löschen'}
+                    {deleting ? t('profile.deleting') : t('profile.deleteFinal')}
                   </button>
-                  <button className="btn btn-outline" onClick={() => setShowDeleteConfirm(false)}>Abbrechen</button>
+                  <button className="btn btn-outline" onClick={() => setShowDeleteConfirm(false)}>{t('common.cancel')}</button>
                 </div>
               </div>
             )}

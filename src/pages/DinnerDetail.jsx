@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { Calendar, MapPin, Users, ChefHat, ArrowLeft, Star, Check, X, Clock, UserPlus, Instagram } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import LoginModal from '../components/LoginModal'
 import DinnerChat from '../components/DinnerChat'
 import StarRating from '../components/StarRating'
@@ -25,6 +26,7 @@ function isPastDinner(dinner) {
 }
 
 export default function DinnerDetail() {
+  const { t } = useTranslation()
   const { id } = useParams()
   const { user } = useAuth()
   const { showToast } = useToast()
@@ -101,10 +103,10 @@ export default function DinnerDetail() {
           if (snap.exists()) {
             profiles[uid] = snap.data()
           } else {
-            profiles[uid] = { displayName: 'Nutzer', photoURL: '' }
+            profiles[uid] = { displayName: t('common.user'), photoURL: '' }
           }
         } catch (e) {
-          profiles[uid] = { displayName: 'Nutzer', photoURL: '' }
+          profiles[uid] = { displayName: t('common.user'), photoURL: '' }
         }
       }
       setter(profiles)
@@ -120,9 +122,9 @@ export default function DinnerDetail() {
     try {
       await updateDoc(doc(db, 'dinners', id), { guests: arrayUnion(user.uid) })
       setDinner(prev => ({ ...prev, guests: [...(prev.guests || []), user.uid] }))
-      showToast('Du nimmst jetzt am Dinner teil! 🎉', 'success')
+      showToast(t('dinner.joinSuccess'), 'success')
     } catch (err) {
-      showToast('Fehler beim Beitreten.', 'error')
+      showToast(t('dinner.joinError'), 'error')
     }
     setJoining(false)
   }
@@ -134,9 +136,9 @@ export default function DinnerDetail() {
     try {
       await updateDoc(doc(db, 'dinners', id), { pendingGuests: arrayUnion(user.uid) })
       setDinner(prev => ({ ...prev, pendingGuests: [...(prev.pendingGuests || []), user.uid] }))
-      showToast('Anfrage gesendet! Der Host wird benachrichtigt.', 'success')
+      showToast(t('dinner.requestSent'), 'success')
     } catch (err) {
-      showToast('Fehler beim Senden der Anfrage.', 'error')
+      showToast(t('dinner.requestError'), 'error')
     }
     setJoining(false)
   }
@@ -146,9 +148,9 @@ export default function DinnerDetail() {
     try {
       await updateDoc(doc(db, 'dinners', id), { guests: arrayRemove(user.uid) })
       setDinner(prev => ({ ...prev, guests: (prev.guests || []).filter(g => g !== user.uid) }))
-      showToast('Teilnahme wurde abgesagt.', 'info')
+      showToast(t('dinner.leaveSuccess'), 'info')
     } catch (err) {
-      showToast('Fehler beim Verlassen.', 'error')
+      showToast(t('dinner.leaveError'), 'error')
     }
     setJoining(false)
   }
@@ -158,9 +160,9 @@ export default function DinnerDetail() {
     try {
       await updateDoc(doc(db, 'dinners', id), { pendingGuests: arrayRemove(user.uid) })
       setDinner(prev => ({ ...prev, pendingGuests: (prev.pendingGuests || []).filter(g => g !== user.uid) }))
-      showToast('Anfrage zurückgezogen.', 'info')
+      showToast(t('dinner.requestWithdrawn'), 'info')
     } catch (err) {
-      showToast('Fehler beim Zurückziehen.', 'error')
+      showToast(t('dinner.withdrawError'), 'error')
     }
     setJoining(false)
   }
@@ -177,9 +179,9 @@ export default function DinnerDetail() {
         pendingGuests: (prev.pendingGuests || []).filter(g => g !== guestUid),
         guests: [...(prev.guests || []), guestUid]
       }))
-      showToast('Gast angenommen!', 'success')
+      showToast(t('dinner.guestApproved'), 'success')
     } catch (err) {
-      showToast('Fehler beim Annehmen.', 'error')
+      showToast(t('dinner.approveError'), 'error')
     }
   }
 
@@ -191,9 +193,9 @@ export default function DinnerDetail() {
         ...prev,
         pendingGuests: (prev.pendingGuests || []).filter(g => g !== guestUid)
       }))
-      showToast('Anfrage abgelehnt.', 'info')
+      showToast(t('dinner.requestRejected'), 'info')
     } catch (err) {
-      showToast('Fehler beim Ablehnen.', 'error')
+      showToast(t('dinner.rejectError'), 'error')
     }
   }
 
@@ -203,16 +205,16 @@ export default function DinnerDetail() {
     try {
       await addDoc(collection(db, 'dinners', id, 'ratings'), {
         userId: user.uid,
-        userName: user.displayName || 'Anonym',
+        userName: user.displayName || t('common.anonymous'),
         stars: myRating,
         comment: myComment.trim(),
         createdAt: serverTimestamp()
       })
       setHasRated(true)
-      setRatings(prev => [...prev, { userId: user.uid, userName: user.displayName || 'Anonym', stars: myRating, comment: myComment.trim() }])
-      showToast('Bewertung abgegeben! Danke! ⭐', 'success')
+      setRatings(prev => [...prev, { userId: user.uid, userName: user.displayName || t('common.anonymous'), stars: myRating, comment: myComment.trim() }])
+      showToast(t('dinner.ratingSuccess'), 'success')
     } catch (err) {
-      showToast('Fehler beim Bewerten.', 'error')
+      showToast(t('dinner.ratingError'), 'error')
     }
     setSubmittingRating(false)
   }
@@ -220,8 +222,8 @@ export default function DinnerDetail() {
   if (loading) return <div className="loading"><div className="spinner"/></div>
   if (!dinner) return (
     <div className="empty-state" style={{paddingTop:120}}>
-      <h3>Dinner nicht gefunden</h3>
-      <button className="btn btn-primary" onClick={() => navigate('/')}>Zurück</button>
+      <h3>{t('dinner.notFound')}</h3>
+      <button className="btn btn-primary" onClick={() => navigate('/')}>{t('common.back')}</button>
     </div>
   )
 
@@ -239,20 +241,20 @@ export default function DinnerDetail() {
   return (
     <div className="detail-page">
       <button className="detail-back" onClick={() => navigate(-1)}>
-        <ArrowLeft size={18}/> Zurück
+        <ArrowLeft size={18}/> {t('common.back')}
       </button>
 
       <div className="detail-card">
         <div className="detail-header">
           <span className="dinner-card-cuisine">{dinner.cuisine}</span>
-          {past && <span className="past-badge"><Star size={12} /> Vergangen</span>}
-          {needsApproval && !past && <span className="approval-badge"><Clock size={12} /> Genehmigung nötig</span>}
+          {past && <span className="past-badge"><Star size={12} /> {t('dinner.past')}</span>}
+          {needsApproval && !past && <span className="approval-badge"><Clock size={12} /> {t('dinner.approvalRequired')}</span>}
           <h1>{dinner.title}</h1>
           {avgRating && (
             <div className="detail-avg-rating">
               <Star size={16} fill="#e85d04" stroke="#e85d04" />
               <span>{avgRating}</span>
-              <span className="rating-count">({ratings.length} Bewertung{ratings.length !== 1 ? 'en' : ''})</span>
+              <span className="rating-count">({t('dinner.ratingCount', { count: ratings.length })})</span>
             </div>
           )}
         </div>
@@ -267,12 +269,12 @@ export default function DinnerDetail() {
             {dinner.date && <div className="detail-info-item"><Calendar size={16}/> {dinner.date}{dinner.time ? `, ${dinner.time}` : ''}</div>}
             {dinner.location && <div className="detail-info-item"><MapPin size={16}/> {dinner.location}</div>}
             {dinner.address && <div className="detail-info-item"><MapPin size={16}/> {dinner.address}</div>}
-            <div className="detail-info-item"><Users size={16}/> {guestCount}/{dinner.maxGuests} Gäste</div>
+            <div className="detail-info-item"><Users size={16}/> {guestCount}/{dinner.maxGuests} {t('myDinners.guests')}</div>
           </div>
         </div>
 
         <span className="detail-host-line">
-          Gehostet von <Link to={`/profile/${dinner.hostId}`} className="host-link"><strong>{dinner.hostName}</strong></Link>
+          {t('dinner.hostedBy')} <Link to={`/profile/${dinner.hostId}`} className="host-link"><strong>{dinner.hostName}</strong></Link>
           {hostProfile?.instagram && (
             <a
               href={`https://instagram.com/${hostProfile.instagram}`}
@@ -292,19 +294,19 @@ export default function DinnerDetail() {
         <div className="detail-actions">
           {isGuest ? (
             <button className="btn btn-outline" onClick={handleLeave} disabled={joining}>
-              {joining ? 'Wird bearbeitet...' : 'Teilnahme absagen'}
+              {joining ? t('dinner.processing') : t('dinner.leave')}
             </button>
           ) : isPending ? (
             <button className="btn btn-outline" onClick={handleCancelRequest} disabled={joining}>
-              <Clock size={16} /> {joining ? 'Wird bearbeitet...' : 'Anfrage zurückziehen'}
+              <Clock size={16} /> {joining ? t('dinner.processing') : t('dinner.cancelRequest')}
             </button>
           ) : needsApproval ? (
             <button className="btn btn-primary" onClick={handleRequestJoin} disabled={joining || isFull}>
-              <UserPlus size={16} /> {isFull ? 'Dinner ist voll' : joining ? 'Wird bearbeitet...' : 'Teilnahme anfragen'}
+              <UserPlus size={16} /> {isFull ? t('dinner.full') : joining ? t('dinner.processing') : t('dinner.requestJoin')}
             </button>
           ) : (
             <button className="btn btn-primary" onClick={handleJoin} disabled={joining || isFull}>
-              {isFull ? 'Dinner ist voll' : joining ? 'Wird bearbeitet...' : 'Teilnehmen'}
+              {isFull ? t('dinner.full') : joining ? t('dinner.processing') : t('dinner.join')}
             </button>
           )}
         </div>
@@ -313,7 +315,7 @@ export default function DinnerDetail() {
       {/* Host: Pending requests section */}
       {isHost && !past && pendingCount > 0 && (
         <div className="detail-guests-section pending-section">
-          <h3><Clock size={18} /> Offene Anfragen ({pendingCount})</h3>
+          <h3><Clock size={18} /> {t('dinner.pendingRequests')} ({pendingCount})</h3>
           <div className="guest-requests-list">
             {(dinner.pendingGuests || []).map(uid => {
               const p = pendingProfiles[uid] || {}
@@ -325,13 +327,13 @@ export default function DinnerDetail() {
                     ) : (
                       <div className="guest-avatar guest-avatar-placeholder">{(p.displayName || '?')[0]}</div>
                     )}
-                    <Link to={`/profile/${uid}`} className="guest-name-link">{p.displayName || 'Nutzer'}</Link>
+                    <Link to={`/profile/${uid}`} className="guest-name-link">{p.displayName || t('common.user')}</Link>
                   </div>
                   <div className="guest-request-actions">
-                    <button className="btn-icon btn-approve" onClick={() => handleApprove(uid)} title="Annehmen">
+                    <button className="btn-icon btn-approve" onClick={() => handleApprove(uid)} title={t('dinner.approve')}>
                       <Check size={18} />
                     </button>
-                    <button className="btn-icon btn-reject" onClick={() => handleReject(uid)} title="Ablehnen">
+                    <button className="btn-icon btn-reject" onClick={() => handleReject(uid)} title={t('dinner.reject')}>
                       <X size={18} />
                     </button>
                   </div>
@@ -345,9 +347,9 @@ export default function DinnerDetail() {
       {/* Host: Confirmed guests */}
       {isHost && !past && (
         <div className="detail-guests-section">
-          <h3><Users size={18} /> Gästeliste ({guestCount})</h3>
+          <h3><Users size={18} /> {t('dinner.guestList')} ({guestCount})</h3>
           {guestCount === 0 ? (
-            <p className="detail-no-guests">Noch keine Gäste angemeldet.</p>
+            <p className="detail-no-guests">{t('dinner.noGuestsYet')}</p>
           ) : (
             <div className="guest-list">
               {(dinner.guests || []).map(uid => {
@@ -359,7 +361,7 @@ export default function DinnerDetail() {
                     ) : (
                       <div className="guest-avatar guest-avatar-placeholder">{(g.displayName || '?')[0]}</div>
                     )}
-                    <Link to={`/profile/${uid}`} className="guest-name-link">{g.displayName || 'Nutzer'}</Link>
+                    <Link to={`/profile/${uid}`} className="guest-name-link">{g.displayName || t('common.user')}</Link>
                   </div>
                 )
               })}
@@ -371,32 +373,32 @@ export default function DinnerDetail() {
       {/* Rating Section for past dinners */}
       {past && user && (isGuest || isHost) && (
         <div className="rating-section">
-          <h3>Bewertung</h3>
+          <h3>{t('dinner.rating')}</h3>
           {!hasRated ? (
             <div className="rating-form">
-              <p>Wie war das Dinner?</p>
+              <p>{t('dinner.howWasIt')}</p>
               <StarRating rating={myRating} onRate={setMyRating} size={28} />
               <textarea
                 className="rating-comment"
-                placeholder="Optionaler Kommentar..."
+                placeholder={t('dinner.optionalComment')}
                 value={myComment}
                 onChange={(e) => setMyComment(e.target.value)}
                 rows={3}
               />
               <button className="btn btn-primary" onClick={handleSubmitRating} disabled={myRating === 0 || submittingRating}>
-                {submittingRating ? 'Wird gesendet...' : 'Bewertung abgeben'}
+                {submittingRating ? t('dinner.sendingRating') : t('dinner.submitRating')}
               </button>
             </div>
           ) : (
             <div className="rating-submitted">
-              <p>Deine Bewertung:</p>
+              <p>{t('dinner.yourRating')}</p>
               <StarRating rating={myRating} readOnly size={24} />
               {myComment && <p className="rating-my-comment">{myComment}</p>}
             </div>
           )}
           {ratings.length > 0 && (
             <div className="ratings-list">
-              <h4>Alle Bewertungen ({ratings.length})</h4>
+              <h4>{t('dinner.allRatings')} ({ratings.length})</h4>
               {ratings.map((r, i) => (
                 <div key={r.id || i} className="rating-item">
                   <div className="rating-item-header">

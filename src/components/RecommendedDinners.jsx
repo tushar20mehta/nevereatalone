@@ -4,8 +4,10 @@ import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
 import { Sparkles, Calendar, MapPin, Users, Star } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 
 export default function RecommendedDinners({ dinners }) {
+  const { t } = useTranslation()
   const { user } = useAuth()
   const navigate = useNavigate()
   const [recommendations, setRecommendations] = useState([])
@@ -23,7 +25,7 @@ export default function RecommendedDinners({ dinners }) {
         const profile = userSnap.data()
         const preferences = (profile.cuisinePreferences || []).map(s => s.toLowerCase())
         const allergies = (profile.allergies || []).map(s => s.toLowerCase())
-        const userLocation = (profile.location || '').toLowerCase()
+        const userLocation = (profile.address || profile.location || '').toLowerCase()
 
         // If no preferences set, don't show recommendations
         if (preferences.length === 0 && allergies.length === 0 && !userLocation) {
@@ -117,7 +119,7 @@ export default function RecommendedDinners({ dinners }) {
     <section className="recommended-section">
       <div className="recommended-header">
         <Sparkles size={20} />
-        <h2>Für dich empfohlen</h2>
+        <h2>{t('discover.recommendedTitle')}</h2>
       </div>
       <div className="recommended-scroll">
         {recommendations.map(dinner => (
@@ -139,7 +141,7 @@ export default function RecommendedDinners({ dinners }) {
                 <p className="recommended-card-meta"><MapPin size={13} /> {dinner.location}</p>
               )}
               {dinner.hostName && (
-                <p className="recommended-card-host">von {dinner.hostName}</p>
+                <p className="recommended-card-host">{t('dinner.from')} {dinner.hostName}</p>
               )}
             </div>
           </div>

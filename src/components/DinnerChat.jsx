@@ -3,8 +3,10 @@ import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, g
 import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
 import { Send, MessageCircle } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 export default function DinnerChat({ dinnerId, dinner }) {
+  const { t, i18n } = useTranslation()
   const { user, profilePhoto } = useAuth()
   const [messages, setMessages] = useState([])
   const [newMessage, setNewMessage] = useState('')
@@ -69,21 +71,23 @@ export default function DinnerChat({ dinnerId, dinner }) {
       await addDoc(messagesRef, {
         text: newMessage.trim(),
         userId: user.uid,
-        userName: user.displayName || 'Anonym',
+        userName: user.displayName || t('common.anonymous'),
         userPhoto: profilePhoto || null,
         createdAt: serverTimestamp()
       })
       setNewMessage('')
     } catch (error) {
-      console.error('Nachricht senden fehlgeschlagen:', error)
+      console.error('Send message failed:', error)
     }
     setSending(false)
   }
 
+  const locale = i18n.language === 'en' ? 'en-US' : 'de-DE'
+
   const formatTime = (timestamp) => {
     if (!timestamp) return ''
     const date = timestamp.toDate()
-    return date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
+    return date.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
   }
 
   const formatDate = (timestamp) => {
@@ -91,16 +95,16 @@ export default function DinnerChat({ dinnerId, dinner }) {
     const date = timestamp.toDate()
     const today = new Date()
     const msgDate = new Date(date)
-    if (today.toDateString() === msgDate.toDateString()) return 'Heute'
+    if (today.toDateString() === msgDate.toDateString()) return t('chat.today')
     const yesterday = new Date(today)
     yesterday.setDate(yesterday.getDate() - 1)
-    if (yesterday.toDateString() === msgDate.toDateString()) return 'Gestern'
-    return date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    if (yesterday.toDateString() === msgDate.toDateString()) return t('chat.yesterday')
+    return date.toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: 'numeric' })
   }
 
   // Group messages by date
   const groupedMessages = messages.reduce((groups, msg) => {
-    const dateKey = msg.createdAt ? formatDate(msg.createdAt) : 'Heute'
+    const dateKey = msg.createdAt ? formatDate(msg.createdAt) : t('chat.today')
     if (!groups[dateKey]) groups[dateKey] = []
     groups[dateKey].push(msg)
     return groups
@@ -112,15 +116,15 @@ export default function DinnerChat({ dinnerId, dinner }) {
     <div className="chat-section">
       <div className="chat-header">
         <MessageCircle size={20} />
-        <h3>Gruppenchat</h3>
-        <span className="chat-count">{messages.length} Nachrichten</span>
+        <h3>{t('chat.title')}</h3>
+        <span className="chat-count">{messages.length} {t('chat.messages')}</span>
       </div>
 
       <div className="chat-messages">
         {messages.length === 0 && (
           <div className="chat-empty">
             <MessageCircle size={32} />
-            <p>Noch keine Nachrichten. Schreib die erste!</p>
+            <p>{t('chat.empty')}</p>
           </div>
         )}
 
@@ -147,7 +151,7 @@ export default function DinnerChat({ dinnerId, dinner }) {
                     {msg.userId !== user.uid && (
                       <span className="chat-message-name">
                         {msg.userName}
-                        {dinner.hostId === msg.userId && <span className="chat-host-badge">Host</span>}
+                        {dinner.hostId === msg.userId && <span className="chat-host-badge">{t('chat.host')}</span>}
                       </span>
                     )}
                     <div className="chat-bubble">
@@ -168,7 +172,7 @@ export default function DinnerChat({ dinnerId, dinner }) {
           type="text"
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
-          placeholder="Nachricht schreiben..."
+          placeholder={t('chat.placeholder')}
           className="chat-input"
           maxLength={500}
         />

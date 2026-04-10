@@ -3470,3 +3470,79 @@ input, textarea, select {
   align-items: center;
   gap: 2px;
 }
+
+/* ===== Language switcher ===== */
+.language-switcher {
+  position: relative;
+  margin-right: 10px;
+}
+
+.language-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.language-btn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.language-code {
+  letter-spacing: 0.5px;
+}
+
+.language-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  min-width: 140px;
+  overflow: hidden;
+  z-index: 150;
+}
+
+.language-option {
+  display: block;
+  width: 100%;
+  padding: 10px 16px;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--color-text);
+  transition: background 0.15s;
+}
+
+.language-option:hover {
+  background: var(--color-primary-bg);
+}
+
+.language-option.active {
+  color: var(--color-primary);
+  font-weight: 600;
+  background: var(--color-primary-bg);
+}
+
+.address-textarea {
+  min-height: 80px;
+  font-family: var(--font-body);
+  white-space: pre-wrap;
+}
+
+.display-address {
+  white-space: pre-line;
+}

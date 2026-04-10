@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 
 export default function CookieBanner() {
+  const { t } = useTranslation()
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
@@ -20,16 +22,15 @@ export default function CookieBanner() {
     <div className="cookie-banner">
       <div className="cookie-banner-inner">
         <p className="cookie-banner-text">
-          Diese Website verwendet Cookies, die für den Betrieb der Seite notwendig sind (z.B. Authentifizierung).
-          Weitere Informationen findest du in unserer{' '}
-          <Link to="/datenschutz" className="cookie-banner-link">Datenschutzerklärung</Link>.
+          {t('cookie.text')}{' '}
+          <Link to="/datenschutz" className="cookie-banner-link">{t('cookie.privacyLink')}</Link>.
         </p>
         <div className="cookie-banner-buttons">
           <button className="btn btn-primary cookie-btn" onClick={() => handleConsent('all')}>
-            Akzeptieren
+            {t('cookie.accept')}
           </button>
           <button className="btn cookie-btn cookie-btn-secondary" onClick={() => handleConsent('essential')}>
-            Nur essenzielle Cookies
+            {t('cookie.essential')}
           </button>
         </div>
       </div>

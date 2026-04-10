@@ -4,6 +4,7 @@ import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
 import { Plus, UtensilsCrossed, Trash2, Users, X, ChevronDown, ChevronUp, Clock } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import DinnerCard from '../components/DinnerCard'
 import LoginModal from '../components/LoginModal'
 
@@ -31,6 +32,7 @@ function isPastDinner(dinner) {
 }
 
 export default function MeineDinner() {
+  const { t } = useTranslation()
   const { user } = useAuth()
   const navigate = useNavigate()
   const [tab, setTab] = useState('hosted')
@@ -59,12 +61,12 @@ export default function MeineDinner() {
   }, [user])
 
   const handleDelete = async (dinnerId) => {
-    if (!window.confirm('Dinner wirklich löschen? Das kann nicht rückgängig gemacht werden.')) return
+    if (!window.confirm(t('myDinners.confirmDelete'))) return
     setDeleting(dinnerId)
     try {
       await deleteDoc(doc(db, 'dinners', dinnerId))
     } catch (err) {
-      alert('Fehler beim Löschen.')
+      alert(t('myDinners.deleteError'))
     }
     setDeleting(null)
   }
@@ -72,22 +74,22 @@ export default function MeineDinner() {
   const handleDeleteAllPast = async () => {
     const past = currentDinnersRaw.filter(isPastDinner)
     if (past.length === 0) return
-    if (!window.confirm(`${past.length} vergangene Dinner wirklich löschen? Das kann nicht rückgängig gemacht werden.`)) return
+    if (!window.confirm(t('myDinners.confirmDeleteAll', { count: past.length }))) return
     setDeletingPast(true)
     try {
       await Promise.all(past.map((d) => deleteDoc(doc(db, 'dinners', d.id))))
     } catch (err) {
-      alert('Fehler beim Löschen einiger Dinner.')
+      alert(t('myDinners.deletePartialError'))
     }
     setDeletingPast(false)
   }
 
   const handleRemoveGuest = async (dinnerId, guestId) => {
-    if (!window.confirm('Gast wirklich entfernen?')) return
+    if (!window.confirm(t('myDinners.confirmRemoveGuest'))) return
     try {
       await updateDoc(doc(db, 'dinners', dinnerId), { guests: arrayRemove(guestId) })
     } catch (err) {
-      alert('Fehler beim Entfernen.')
+      alert(t('myDinners.removeError'))
     }
   }
 
@@ -95,9 +97,9 @@ export default function MeineDinner() {
     return (
       <div className="empty-state" style={{ paddingTop: 120 }}>
         <div className="empty-state-icon"><UtensilsCrossed size={32} /></div>
-        <h3>Anmeldung erforderlich</h3>
-        <p>Melde dich an, um deine Dinner zu sehen.</p>
-        <button className="btn btn-primary" onClick={() => setShowLogin(true)}>Anmelden</button>
+        <h3>{t('myDinners.loginRequired')}</h3>
+        <p>{t('myDinners.loginToSee')}</p>
+        <button className="btn btn-primary" onClick={() => setShowLogin(true)}>{t('common.login')}</button>
         {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
       </div>
     )
@@ -113,10 +115,10 @@ export default function MeineDinner() {
         <div className="managed-dinner-info">
           <div className="managed-dinner-badges">
             <span className="dinner-card-cuisine">{dinner.cuisine}</span>
-            {isPast && <span className="past-badge"><Clock size={12} /> Vergangen</span>}
+            {isPast && <span className="past-badge"><Clock size={12} /> {t('myDinners.past')}</span>}
           </div>
           <h3>{dinner.title}</h3>
-          <p>{dinner.date} {dinner.time && `um ${dinner.time} Uhr`} • {dinner.location}</p>
+          <p>{dinner.date} {dinner.time && t('myDinners.at', { time: dinner.time })} • {dinner.location}</p>
         </div>
       </div>
 
@@ -126,7 +128,7 @@ export default function MeineDinner() {
             className="managed-guests-toggle"
             onClick={() => setExpandedDinner(expandedDinner === dinner.id ? null : dinner.id)}
           >
-            <Users size={16} /> Gäste ({(dinner.guests || []).length}/{dinner.maxGuests})
+            <Users size={16} /> {t('myDinners.guests')} ({(dinner.guests || []).length}/{dinner.maxGuests})
             {expandedDinner === dinner.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
           </button>
           <button
@@ -134,7 +136,7 @@ export default function MeineDinner() {
             onClick={() => handleDelete(dinner.id)}
             disabled={deleting === dinner.id}
           >
-            <Trash2 size={16} /> {deleting === dinner.id ? 'Löscht...' : 'Löschen'}
+            <Trash2 size={16} /> {deleting === dinner.id ? t('common.deleting') : t('common.delete')}
           </button>
         </div>
       )}
@@ -142,13 +144,13 @@ export default function MeineDinner() {
       {tab === 'hosted' && expandedDinner === dinner.id && (
         <div className="managed-guests-list">
           {(dinner.guests || []).length === 0 ? (
-            <p className="managed-guests-empty">Noch keine Gäste angemeldet.</p>
+            <p className="managed-guests-empty">{t('myDinners.noGuests')}</p>
           ) : (
             (dinner.guests || []).map((guestId, i) => (
               <div key={guestId} className="managed-guest-item">
-                <span>Gast {i + 1}</span>
+                <span>{t('myDinners.guest')} {i + 1}</span>
                 <button className="btn-remove-guest" onClick={() => handleRemoveGuest(dinner.id, guestId)}>
-                  <X size={14} /> Entfernen
+                  <X size={14} /> {t('myDinners.remove')}
                 </button>
               </div>
             ))
@@ -160,12 +162,12 @@ export default function MeineDinner() {
 
   return (
     <div className="my-dinners-page">
-      <h1>Meine Dinner</h1>
-      <p>Verwalte deine gehosteten und gebuchten Dinner.</p>
+      <h1>{t('myDinners.title')}</h1>
+      <p>{t('myDinners.subtitle')}</p>
 
       <div className="my-dinners-tabs">
-        <button className={`my-dinners-tab ${tab === 'hosted' ? 'active' : ''}`} onClick={() => setTab('hosted')}>Gehostet ({hostedDinners.length})</button>
-        <button className={`my-dinners-tab ${tab === 'joined' ? 'active' : ''}`} onClick={() => setTab('joined')}>Teilgenommen ({joinedDinners.length})</button>
+        <button className={`my-dinners-tab ${tab === 'hosted' ? 'active' : ''}`} onClick={() => setTab('hosted')}>{t('myDinners.hosted')} ({hostedDinners.length})</button>
+        <button className={`my-dinners-tab ${tab === 'joined' ? 'active' : ''}`} onClick={() => setTab('joined')}>{t('myDinners.joined')} ({joinedDinners.length})</button>
       </div>
 
       {loading ? (
@@ -174,7 +176,7 @@ export default function MeineDinner() {
         <div className="managed-dinners-list">
           {upcomingDinners.length > 0 && (
             <>
-              <h2 className="dinners-section-title">Kommende Dinner</h2>
+              <h2 className="dinners-section-title">{t('myDinners.upcoming')}</h2>
               {upcomingDinners.map((dinner) => renderDinnerCard(dinner, false))}
             </>
           )}
@@ -182,7 +184,7 @@ export default function MeineDinner() {
           {pastDinners.length > 0 && (
             <>
               <div className="past-dinners-header">
-                <h2 className="dinners-section-title">Vergangene Dinner ({pastDinners.length})</h2>
+                <h2 className="dinners-section-title">{t('myDinners.past')} ({pastDinners.length})</h2>
                 {tab === 'hosted' && (
                   <button
                     className="btn-delete-all-past"
@@ -190,7 +192,7 @@ export default function MeineDinner() {
                     disabled={deletingPast}
                   >
                     <Trash2 size={16} />
-                    {deletingPast ? 'Löscht...' : 'Alle vergangenen löschen'}
+                    {deletingPast ? t('myDinners.deletingPast') : t('myDinners.deleteAllPast')}
                   </button>
                 )}
               </div>
@@ -201,9 +203,9 @@ export default function MeineDinner() {
       ) : (
         <div className="empty-state">
           <div className="empty-state-icon"><UtensilsCrossed size={32} /></div>
-          <h3>{tab === 'hosted' ? 'Noch keine Dinner gehostet' : 'Noch an keinem Dinner teilgenommen'}</h3>
-          <p>{tab === 'hosted' ? 'Erstelle dein erstes Dinner!' : 'Entdecke Dinner in deiner Nähe!'}</p>
-          <button className="btn btn-primary" onClick={() => navigate(tab === 'hosted' ? '/create' : '/')}><Plus size={18} />{tab === 'hosted' ? 'Dinner erstellen' : 'Dinner entdecken'}</button>
+          <h3>{tab === 'hosted' ? t('myDinners.noHosted') : t('myDinners.noJoined')}</h3>
+          <p>{tab === 'hosted' ? t('myDinners.createFirst') : t('myDinners.discoverNearby')}</p>
+          <button className="btn btn-primary" onClick={() => navigate(tab === 'hosted' ? '/create' : '/')}><Plus size={18} />{tab === 'hosted' ? t('myDinners.createDinner') : t('myDinners.discoverDinner')}</button>
         </div>
       )}
     </div>

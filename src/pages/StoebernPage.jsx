@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import { useNavigate } from 'react-router-dom'
 import { Calendar, Clock, MapPin, ChefHat, X, Heart, Star, ChevronDown, Users } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import LoginModal from '../components/LoginModal'
 
 function isFutureDinner(dinner) {
@@ -21,6 +22,7 @@ function isFutureDinner(dinner) {
 }
 
 export default function StoebernPage() {
+  const { t, i18n } = useTranslation()
   const { user } = useAuth()
   const { showToast } = useToast()
   const navigate = useNavigate()
@@ -174,13 +176,13 @@ export default function StoebernPage() {
       try {
         if (currentDinner.approvalRequired) {
           await updateDoc(doc(db, 'dinners', dinnerId), { pendingGuests: arrayUnion(user.uid) })
-          showToast('Anfrage gesendet! Der Host wird benachrichtigt.', 'success')
+          showToast(t('dinner.requestSent'), 'success')
         } else {
           await updateDoc(doc(db, 'dinners', dinnerId), { guests: arrayUnion(user.uid) })
-          showToast('Du nimmst jetzt am Dinner teil! 🎉', 'success')
+          showToast(t('dinner.joinSuccess'), 'success')
         }
       } catch (err) {
-        showToast('Fehler beim Beitreten.', 'error')
+        showToast(t('dinner.joinError'), 'error')
       }
       setLikedIds(prev => [...prev, dinnerId])
     } else if (direction === 'up') {
@@ -193,7 +195,7 @@ export default function StoebernPage() {
       }
       saveLiked(dinnerId)
       setLikedIds(prev => [...prev, dinnerId])
-      showToast('Dinner gemerkt! ⭐', 'success')
+      showToast(t('stoebern.saved'), 'success')
     }
 
     setTimeout(() => {
@@ -249,7 +251,8 @@ export default function StoebernPage() {
   const formatDate = (dateStr) => {
     if (!dateStr) return ''
     const d = new Date(dateStr)
-    return d.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'short' })
+    const locale = i18n.language === 'en' ? 'en-US' : 'de-DE'
+    return d.toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'short' })
   }
 
   const getCardTransform = () => {
@@ -271,7 +274,7 @@ export default function StoebernPage() {
       <div className="stoebern-page">
         <div className="stoebern-loading">
           <div className="spinner" />
-          <p>Dinner werden geladen...</p>
+          <p>{t('stoebern.loading')}</p>
         </div>
       </div>
     )
@@ -280,18 +283,18 @@ export default function StoebernPage() {
   return (
     <div className="stoebern-page">
       <div className="stoebern-header">
-        <h1>Dinner entdecken</h1>
-        <p>Swipe rechts zum Teilnehmen, links zum Überspringen, hoch zum Merken</p>
+        <h1>{t('stoebern.title')}</h1>
+        <p>{t('stoebern.subtitle')}</p>
       </div>
 
       <div className="stoebern-stack">
         {!currentDinner ? (
           <div className="stoebern-empty">
             <div className="stoebern-empty-icon">🍽️</div>
-            <h2>Keine weiteren Dinner gefunden</h2>
-            <p>Schau später nochmal vorbei!</p>
+            <h2>{t('stoebern.empty')}</h2>
+            <p>{t('stoebern.emptySubtitle')}</p>
             <button className="btn btn-primary" onClick={() => navigate('/')}>
-              Zurück zu Entdecken
+              {t('stoebern.backToDiscover')}
             </button>
           </div>
         ) : (
@@ -332,13 +335,13 @@ export default function StoebernPage() {
             >
               {/* Swipe indicators */}
               {getSwipeIndicator() === 'right' && (
-                <div className="stoebern-swipe-badge stoebern-badge-right">TEILNEHMEN</div>
+                <div className="stoebern-swipe-badge stoebern-badge-right">{t('stoebern.join')}</div>
               )}
               {getSwipeIndicator() === 'left' && (
-                <div className="stoebern-swipe-badge stoebern-badge-left">NEIN</div>
+                <div className="stoebern-swipe-badge stoebern-badge-left">{t('stoebern.skip')}</div>
               )}
               {getSwipeIndicator() === 'up' && (
-                <div className="stoebern-swipe-badge stoebern-badge-up">MERKEN ⭐</div>
+                <div className="stoebern-swipe-badge stoebern-badge-up">{t('stoebern.favorite')}</div>
               )}
 
               <div className="stoebern-card-image" onClick={() => setExpandedCard(expandedCard ? null : currentDinner.id)}>
@@ -349,7 +352,7 @@ export default function StoebernPage() {
                     {currentDinner.hostName?.[0] || '?'}
                   </div>
                 )}
-                <div className="stoebern-card-host-name">{currentDinner.hostName || 'Anonym'}</div>
+                <div className="stoebern-card-host-name">{currentDinner.hostName || t('common.anonymous')}</div>
                 {currentDinner.cuisine && (
                   <span className="stoebern-cuisine-tag">{currentDinner.cuisine}</span>
                 )}
@@ -359,7 +362,7 @@ export default function StoebernPage() {
                 <h3 className="stoebern-card-title">{currentDinner.title}</h3>
                 <div className="stoebern-card-meta">
                   <span><Calendar size={14} /> {formatDate(currentDinner.date)}</span>
-                  {currentDinner.time && <span><Clock size={14} /> {currentDinner.time} Uhr</span>}
+                  {currentDinner.time && <span><Clock size={14} /> {currentDinner.time}</span>}
                   {currentDinner.location && <span><MapPin size={14} /> {currentDinner.location}</span>}
                 </div>
                 {currentDinner.description && (
@@ -373,7 +376,7 @@ export default function StoebernPage() {
                   <div className="stoebern-expanded-section">
                     <div className="stoebern-guest-info">
                       <Users size={14} />
-                      <span>{(currentDinner.guests || []).length}{currentDinner.maxGuests ? ` / ${currentDinner.maxGuests}` : ''} Gäste</span>
+                      <span>{(currentDinner.guests || []).length}{currentDinner.maxGuests ? ` / ${currentDinner.maxGuests}` : ''} {t('stoebern.guests')}</span>
                     </div>
                     {currentDinner.guests?.length > 0 && (
                       <div className="stoebern-guest-avatars">
@@ -392,17 +395,17 @@ export default function StoebernPage() {
                       </div>
                     )}
                     {currentDinner.approvalRequired && (
-                      <div className="stoebern-approval-note">Genehmigung durch Host erforderlich</div>
+                      <div className="stoebern-approval-note">{t('stoebern.approvalNote')}</div>
                     )}
                     <button className="stoebern-detail-link" onClick={(e) => { e.stopPropagation(); navigate(`/dinner/${currentDinner.id}`) }}>
-                      Details ansehen →
+                      {t('stoebern.details')}
                     </button>
                   </div>
                 )}
 
                 {expandedCard && (
                   <button className="stoebern-collapse-btn" onClick={(e) => { e.stopPropagation(); setExpandedCard(null) }}>
-                    <ChevronDown size={16} /> Einklappen
+                    <ChevronDown size={16} /> {t('stoebern.collapse')}
                   </button>
                 )}
               </div>
@@ -413,21 +416,21 @@ export default function StoebernPage() {
               <button
                 className="stoebern-btn stoebern-btn-skip"
                 onClick={() => animateSwipe('left')}
-                title="Überspringen"
+                title={t('stoebern.skipLabel')}
               >
                 <X size={28} />
               </button>
               <button
                 className="stoebern-btn stoebern-btn-fav"
                 onClick={() => animateSwipe('up')}
-                title="Merken"
+                title={t('stoebern.favoriteLabel')}
               >
                 <Star size={24} />
               </button>
               <button
                 className="stoebern-btn stoebern-btn-join"
                 onClick={() => animateSwipe('right')}
-                title="Teilnehmen"
+                title={t('stoebern.joinLabel')}
               >
                 <Heart size={28} />
               </button>

@@ -5,20 +5,21 @@ import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Calendar, Clock, MapPin, Users, ArrowLeft, ChefHat, UserPlus, Check, Shuffle } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import LoginModal from '../components/LoginModal'
-
-const COURSE_LABELS = {
-  appetizer: 'Vorspeise',
-  main: 'Hauptgang',
-  dessert: 'Dessert',
-  any: 'Egal'
-}
+import { COUNTRY_CODES, ADDRESS_PLACEHOLDERS } from '../utils/countries'
 
 export default function RunningDinnerDetail() {
+  const { t, i18n } = useTranslation()
   const { id } = useParams()
   const { user } = useAuth()
   const { showToast } = useToast()
   const navigate = useNavigate()
+
+  const courseLabel = (key) => {
+    const map = { appetizer: 'runningDinner.appetizer', main: 'runningDinner.main', dessert: 'runningDinner.dessert', any: 'runningDinner.any' }
+    return t(map[key] || 'runningDinner.any')
+  }
 
   const [event, setEvent] = useState(null)
   const [teams, setTeams] = useState([])
@@ -32,9 +33,8 @@ export default function RunningDinnerDetail() {
   const [form, setForm] = useState({
     partnerName: '',
     partnerEmail: '',
+    country: 'DE',
     address: '',
-    city: '',
-    plz: '',
     preferredCourse: 'any'
   })
 
@@ -69,7 +69,8 @@ export default function RunningDinnerDetail() {
 
   const formatDate = (dateStr) => {
     if (!dateStr) return ''
-    return new Date(dateStr).toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+    const locale = i18n.language === 'en' ? 'en-US' : 'de-DE'
+    return new Date(dateStr).toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
   }
 
   const isOpen = () => {
@@ -84,12 +85,22 @@ export default function RunningDinnerDetail() {
     setForm(prev => ({ ...prev, [name]: value }))
   }
 
+  // Combine legacy plz/city/address into single string
+  const getTeamAddress = (team) => {
+    if (team.address && !team.plz && !team.city) return team.address
+    const parts = []
+    if (team.address) parts.push(team.address)
+    const line2 = [team.plz, team.city].filter(Boolean).join(' ')
+    if (line2) parts.push(line2)
+    return parts.join('\n')
+  }
+
   const handleRegister = async (e) => {
     e.preventDefault()
     if (!user) { setShowLogin(true); return }
 
-    if (!form.address || !form.plz || !form.city) {
-      showToast('Bitte gib deine Adresse ein.', 'error')
+    if (!form.address.trim()) {
+      showToast(t('runningDinner.addressRequired'), 'error')
       return
     }
 
@@ -97,24 +108,23 @@ export default function RunningDinnerDetail() {
     try {
       await addDoc(collection(db, 'runningDinners', id, 'teams'), {
         member1Id: user.uid,
-        member1Name: user.displayName || 'Anonym',
+        member1Name: user.displayName || t('common.anonymous'),
         member2Id: '',
         member2Name: form.partnerName.trim() || '',
         partnerEmail: form.partnerEmail.trim() || '',
+        country: form.country,
         address: form.address.trim(),
-        city: form.city.trim(),
-        plz: form.plz.trim(),
         preferredCourse: form.preferredCourse,
         assignedCourse: '',
         route: [],
         createdAt: serverTimestamp()
       })
-      showToast('Team erfolgreich angemeldet!', 'success')
+      showToast(t('runningDinner.registeredSuccess'), 'success')
       setShowRegister(false)
-      setForm({ partnerName: '', partnerEmail: '', address: '', city: '', plz: '', preferredCourse: 'any' })
+      setForm({ partnerName: '', partnerEmail: '', country: 'DE', address: '', preferredCourse: 'any' })
     } catch (err) {
       console.error('Register error:', err)
-      showToast('Fehler bei der Anmeldung.', 'error')
+      showToast(t('runningDinner.registerError'), 'error')
     }
     setSubmitting(false)
   }
@@ -140,12 +150,10 @@ export default function RunningDinnerDetail() {
       const duration = event.courseDuration || 90
       const startTime = event.eventTime || '18:00'
 
-      // Step (a): Assign courses respecting preferences
       const teamsCopy = [...teams]
       const assigned = { appetizer: [], main: [], dessert: [] }
       const targetSize = Math.floor(teamsCopy.length / 3)
 
-      // First pass: assign teams with specific preferences
       for (const course of courses) {
         const preferred = teamsCopy.filter(t =>
           t.preferredCourse === course && !Object.values(assigned).flat().includes(t)
@@ -157,7 +165,6 @@ export default function RunningDinnerDetail() {
         }
       }
 
-      // Second pass: fill remaining slots with 'any' or unassigned teams
       const alreadyAssigned = new Set(Object.values(assigned).flat().map(t => t.id))
       const remaining = teamsCopy.filter(t => !alreadyAssigned.has(t.id))
 
@@ -166,13 +173,11 @@ export default function RunningDinnerDetail() {
           assigned[course].push(remaining.shift())
         }
       }
-      // Distribute any leftover teams (when not divisible by 3)
       while (remaining.length > 0) {
         const minCourse = courses.reduce((a, b) => assigned[a].length <= assigned[b].length ? a : b)
         assigned[minCourse].push(remaining.shift())
       }
 
-      // Build a flat map of teamId -> assignedCourse
       const courseMap = {}
       for (const course of courses) {
         for (const team of assigned[course]) {
@@ -180,8 +185,6 @@ export default function RunningDinnerDetail() {
         }
       }
 
-      // Step (b): Form 3er-groups (one team per course type)
-      // Build groups by cycling through each course's teams
       const maxGroupCount = Math.max(...courses.map(c => assigned[c].length))
       const groups = []
       for (let i = 0; i < maxGroupCount; i++) {
@@ -192,12 +195,10 @@ export default function RunningDinnerDetail() {
         groups.push(group)
       }
 
-      // Step (c): Build route for each team and write to Firestore
       const batch = writeBatch(db)
 
       for (const team of teamsCopy) {
         const assignedCourse = courseMap[team.id]
-        // Find which group this team belongs to
         const myGroup = groups.find(g => Object.values(g).some(t => t.id === team.id))
         if (!myGroup) continue
 
@@ -206,10 +207,10 @@ export default function RunningDinnerDetail() {
           const time = addMinutes(startTime, idx * duration)
           return {
             courseNumber: idx + 1,
-            courseName: COURSE_LABELS[course],
+            courseKey: course,
             hostTeamId: hostTeam.id,
-            hostAddress: `${hostTeam.address}, ${hostTeam.plz} ${hostTeam.city}`,
-            time: `${time} Uhr`
+            hostAddress: getTeamAddress(hostTeam),
+            time
           }
         })
 
@@ -217,14 +218,13 @@ export default function RunningDinnerDetail() {
         batch.update(teamRef, { assignedCourse, route })
       }
 
-      // Set event status to 'assigned'
       batch.update(doc(db, 'runningDinners', id), { status: 'assigned' })
 
       await batch.commit()
-      showToast(`${teamsCopy.length} Teams wurden erfolgreich zugeteilt!`, 'success')
+      showToast(t('runningDinner.assignedSuccess', { count: teamsCopy.length }), 'success')
     } catch (err) {
       console.error('Assignment error:', err)
-      showToast('Fehler bei der Zuteilung.', 'error')
+      showToast(t('runningDinner.assignError'), 'error')
     }
     setAssigning(false)
   }
@@ -234,8 +234,8 @@ export default function RunningDinnerDetail() {
   if (!event) {
     return (
       <div className="empty-state" style={{ paddingTop: 120 }}>
-        <h3>Event nicht gefunden</h3>
-        <button className="btn btn-primary" onClick={() => navigate('/running-dinner')}>Zurück</button>
+        <h3>{t('runningDinner.eventNotFound')}</h3>
+        <button className="btn btn-primary" onClick={() => navigate('/running-dinner')}>{t('common.back')}</button>
       </div>
     )
   }
@@ -243,7 +243,7 @@ export default function RunningDinnerDetail() {
   return (
     <div className="rd-detail-page">
       <button className="detail-back" onClick={() => navigate('/running-dinner')}>
-        <ArrowLeft size={18} /> Zurück
+        <ArrowLeft size={18} /> {t('common.back')}
       </button>
 
       <div className="rd-detail-card">
@@ -253,43 +253,43 @@ export default function RunningDinnerDetail() {
             <div className="rd-detail-meta">
               <span><MapPin size={16} /> {event.city}</span>
               <span><Calendar size={16} /> {formatDate(event.date)}</span>
-              <span><Clock size={16} /> {event.eventTime} Uhr</span>
-              <span><Users size={16} /> {teams.length} Teams angemeldet</span>
+              <span><Clock size={16} /> {event.eventTime}</span>
+              <span><Users size={16} /> {teams.length} {t('runningDinner.teamsRegistered')}</span>
             </div>
           </div>
           {isOpen() ? (
-            <span className="rd-badge rd-badge-open">Anmeldung offen</span>
+            <span className="rd-badge rd-badge-open">{t('runningDinner.registrationOpen')}</span>
           ) : event.status === 'assigned' ? (
-            <span className="rd-badge rd-badge-assigned">Teams zugeteilt</span>
+            <span className="rd-badge rd-badge-assigned">{t('runningDinner.teamsAssigned')}</span>
           ) : (
-            <span className="rd-badge rd-badge-closed">Abgeschlossen</span>
+            <span className="rd-badge rd-badge-closed">{t('runningDinner.closed')}</span>
           )}
         </div>
 
         {event.description && (
           <div className="rd-detail-desc">
-            <h3>Über das Event</h3>
+            <h3>{t('runningDinner.about')}</h3>
             <p>{event.description}</p>
           </div>
         )}
 
         <div className="rd-detail-info">
           <div className="rd-info-item">
-            <strong>Ablauf</strong>
-            <p>3 Gänge (Vorspeise, Hauptgang, Dessert) an 3 verschiedenen Orten. Jedes Team kocht einen Gang zu Hause und ist bei den anderen Gängen zu Gast.</p>
+            <strong>{t('runningDinner.flow')}</strong>
+            <p>{t('runningDinner.flowText')}</p>
           </div>
           <div className="rd-info-item">
-            <strong>Dauer pro Gang</strong>
-            <p>{event.courseDuration || 90} Minuten</p>
+            <strong>{t('runningDinner.perCourse')}</strong>
+            <p>{t('runningDinner.minutes', { count: event.courseDuration || 90 })}</p>
           </div>
           {event.registrationDeadline && (
             <div className="rd-info-item">
-              <strong>Anmeldeschluss</strong>
+              <strong>{t('runningDinner.deadline')}</strong>
               <p>{formatDate(event.registrationDeadline)}</p>
             </div>
           )}
           <div className="rd-info-item">
-            <strong>Organisiert von</strong>
+            <strong>{t('runningDinner.organizedBy')}</strong>
             <p>{event.organizerName}</p>
           </div>
         </div>
@@ -297,16 +297,14 @@ export default function RunningDinnerDetail() {
         {/* Organizer: Assign Teams Button */}
         {canAssign && (
           <div className="rd-assign-section">
-            <p className="rd-assign-info">
-              Die Anmeldefrist ist abgelaufen. Es haben sich <strong>{teams.length} Teams</strong> angemeldet.
-              {teams.length < 3 && ' Mindestens 3 Teams sind für die Zuteilung erforderlich.'}
-            </p>
+            <p className="rd-assign-info" dangerouslySetInnerHTML={{ __html: t('runningDinner.assignInfo', { count: teams.length }) }} />
+            {teams.length < 3 && <p className="rd-assign-info">{t('runningDinner.needMinTeams')}</p>}
             <button
               className="btn btn-primary rd-assign-btn"
               onClick={handleAssignTeams}
               disabled={assigning || teams.length < 3}
             >
-              <Shuffle size={18} /> {assigning ? 'Teams werden zugeteilt...' : 'Teams zuteilen'}
+              <Shuffle size={18} /> {assigning ? t('runningDinner.assigning') : t('runningDinner.assign')}
             </button>
           </div>
         )}
@@ -319,53 +317,60 @@ export default function RunningDinnerDetail() {
                 className="btn btn-primary rd-register-btn"
                 onClick={() => user ? setShowRegister(true) : setShowLogin(true)}
               >
-                <UserPlus size={18} /> Als Team anmelden
+                <UserPlus size={18} /> {t('runningDinner.registerAsTeam')}
               </button>
             ) : (
               <form className="rd-register-form" onSubmit={handleRegister}>
-                <h3><UserPlus size={18} /> Team-Anmeldung</h3>
+                <h3><UserPlus size={18} /> {t('runningDinner.teamRegistration')}</h3>
 
                 <div className="form-group">
-                  <label className="form-label">Dein/e Partner/in (Name)</label>
-                  <input className="form-input" name="partnerName" value={form.partnerName} onChange={handleChange} placeholder="Name deines Teampartners" />
+                  <label className="form-label">{t('runningDinner.partnerName')}</label>
+                  <input className="form-input" name="partnerName" value={form.partnerName} onChange={handleChange} placeholder={t('runningDinner.partnerNamePlaceholder')} />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Partner E-Mail (optional)</label>
-                  <input className="form-input" type="email" name="partnerEmail" value={form.partnerEmail} onChange={handleChange} placeholder="Email zur Einladung" />
+                  <label className="form-label">{t('runningDinner.partnerEmail')}</label>
+                  <input className="form-input" type="email" name="partnerEmail" value={form.partnerEmail} onChange={handleChange} placeholder={t('runningDinner.partnerEmailPlaceholder')} />
                 </div>
 
-                <div className="rd-form-divider">Eure Adresse (hier kocht ihr)</div>
-
-                <div className="form-group">
-                  <label className="form-label">Straße und Hausnummer *</label>
-                  <input className="form-input" name="address" value={form.address} onChange={handleChange} placeholder="z.B. Musterstraße 12" required />
-                </div>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label className="form-label">PLZ *</label>
-                    <input className="form-input" name="plz" value={form.plz} onChange={handleChange} placeholder="z.B. 80331" required />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Stadt *</label>
-                    <input className="form-input" name="city" value={form.city} onChange={handleChange} placeholder="z.B. München" required />
-                  </div>
-                </div>
+                <div className="rd-form-divider">{t('runningDinner.yourAddress')}</div>
 
                 <div className="form-group">
-                  <label className="form-label">Bevorzugter Gang</label>
+                  <label className="form-label">{t('runningDinner.country')}</label>
+                  <select className="form-select" name="country" value={form.country} onChange={handleChange}>
+                    {COUNTRY_CODES.map(code => (
+                      <option key={code} value={code}>{t(`countries.${code}`)}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">{t('runningDinner.address')} *</label>
+                  <textarea
+                    className="form-textarea address-textarea"
+                    name="address"
+                    value={form.address}
+                    onChange={handleChange}
+                    placeholder={ADDRESS_PLACEHOLDERS[form.country] || ADDRESS_PLACEHOLDERS.OTHER}
+                    rows={3}
+                    required
+                  />
+                  <small className="form-hint">{t('runningDinner.addressHint')}</small>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">{t('runningDinner.preferredCourse')}</label>
                   <select className="form-input" name="preferredCourse" value={form.preferredCourse} onChange={handleChange}>
-                    <option value="any">Egal</option>
-                    <option value="appetizer">Vorspeise</option>
-                    <option value="main">Hauptgang</option>
-                    <option value="dessert">Dessert</option>
+                    <option value="any">{t('runningDinner.any')}</option>
+                    <option value="appetizer">{t('runningDinner.appetizer')}</option>
+                    <option value="main">{t('runningDinner.main')}</option>
+                    <option value="dessert">{t('runningDinner.dessert')}</option>
                   </select>
                 </div>
 
                 <div className="form-actions">
                   <button type="submit" className="btn btn-primary" disabled={submitting}>
-                    {submitting ? 'Wird angemeldet...' : 'Team anmelden'}
+                    {submitting ? t('runningDinner.registering') : t('runningDinner.registerTeam')}
                   </button>
-                  <button type="button" className="btn btn-outline" onClick={() => setShowRegister(false)}>Abbrechen</button>
+                  <button type="button" className="btn btn-outline" onClick={() => setShowRegister(false)}>{t('common.cancel')}</button>
                 </div>
               </form>
             )}
@@ -377,22 +382,22 @@ export default function RunningDinnerDetail() {
           <div className="rd-registered">
             <Check size={20} />
             <div>
-              <strong>Ihr seid angemeldet!</strong>
-              <p>Team: {userTeam.member1Name}{userTeam.member2Name ? ` & ${userTeam.member2Name}` : ''}</p>
+              <strong>{t('runningDinner.youAreRegistered')}</strong>
+              <p>{t('runningDinner.team')}: {userTeam.member1Name}{userTeam.member2Name ? ` & ${userTeam.member2Name}` : ''}</p>
               {userTeam.assignedCourse && (
-                <p>Euer Gang: <strong>{COURSE_LABELS[userTeam.assignedCourse] || userTeam.assignedCourse}</strong></p>
+                <p>{t('runningDinner.yourCourse')}: <strong>{courseLabel(userTeam.assignedCourse)}</strong></p>
               )}
               {userTeam.route?.length > 0 && (
                 <div className="rd-route">
-                  <strong>Eure Route:</strong>
+                  <strong>{t('runningDinner.yourRoute')}:</strong>
                   {userTeam.route.map((stop, i) => (
                     <div key={i} className="rd-route-stop">
                       <span className="rd-route-number">{stop.courseNumber}</span>
                       <div>
-                        <strong>{stop.courseName}</strong>
-                        {stop.hostTeamId === userTeam.id && <span className="rd-route-host-badge">Ihr kocht!</span>}
+                        <strong>{courseLabel(stop.courseKey) || stop.courseName}</strong>
+                        {stop.hostTeamId === userTeam.id && <span className="rd-route-host-badge">{t('runningDinner.youCook')}</span>}
                         <br />
-                        <span className="rd-route-address">{stop.hostAddress}</span>
+                        <span className="rd-route-address display-address">{stop.hostAddress}</span>
                         <br />
                         <span className="rd-route-time"><Clock size={12} /> {stop.time}</span>
                       </div>
@@ -407,7 +412,7 @@ export default function RunningDinnerDetail() {
         {/* Teams List */}
         {teams.length > 0 && (
           <div className="rd-teams-section">
-            <h3><Users size={18} /> Angemeldete Teams ({teams.length})</h3>
+            <h3><Users size={18} /> {t('runningDinner.teamsList')} ({teams.length})</h3>
             <div className="rd-teams-list">
               {teams.map(team => (
                 <div key={team.id} className="rd-team-item">
@@ -416,9 +421,9 @@ export default function RunningDinnerDetail() {
                     {team.member2Name && <span> & {team.member2Name}</span>}
                   </div>
                   <div className="rd-team-info">
-                    <span><MapPin size={12} /> {team.plz} {team.city}</span>
+                    <span><MapPin size={12} /> {team.city || (team.address || '').split('\n').slice(-1)[0]}</span>
                     {team.assignedCourse && (
-                      <span className="rd-team-course">{COURSE_LABELS[team.assignedCourse]}</span>
+                      <span className="rd-team-course">{courseLabel(team.assignedCourse)}</span>
                     )}
                   </div>
                 </div>

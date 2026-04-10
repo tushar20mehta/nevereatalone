@@ -3,8 +3,10 @@ import { Calendar, MapPin, Users, Instagram } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '../firebase'
+import { useTranslation } from 'react-i18next'
 
 export default function DinnerCard({ dinner }) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [hostInstagram, setHostInstagram] = useState('')
 
@@ -43,11 +45,11 @@ export default function DinnerCard({ dinner }) {
           <p className="dinner-card-info"><MapPin size={14} /> {dinner.location}</p>
         )}
         {dinner.maxGuests && (
-          <p className="dinner-card-info"><Users size={14} /> Max. {dinner.maxGuests} Gäste</p>
+          <p className="dinner-card-info"><Users size={14} /> {t('dinner.maxGuests', { count: dinner.maxGuests })}</p>
         )}
         {dinner.hostName && (
           <p className="dinner-card-host">
-            von {dinner.hostName}
+            {t('dinner.from')} {dinner.hostName}
             {hostInstagram && (
               <a
                 href={`https://instagram.com/${hostInstagram}`}
