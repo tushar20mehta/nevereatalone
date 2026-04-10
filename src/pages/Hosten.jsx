@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
+import { collection, addDoc, doc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
@@ -35,8 +35,12 @@ export default function Hosten() {
     if (!user) { setShowLogin(true); return }
     setSubmitting(true)
     try {
-      await addDoc(collection(db, 'dinners'), {
-        ...form,
+      // The sensitive street/number is never stored in the public dinner
+      // document. It's written to the /private/location subcollection below
+      // and gated by Firestore rules (host + approved guests only).
+      const { address, ...publicFields } = form
+      const dinnerRef = await addDoc(collection(db, 'dinners'), {
+        ...publicFields,
         maxGuests: Number(form.maxGuests),
         hostId: user.uid,
         hostName: user.displayName || t('common.anonymous'),
@@ -45,6 +49,12 @@ export default function Hosten() {
         pendingGuests: [],
         createdAt: serverTimestamp()
       })
+
+      const street = (address || '').trim()
+      if (street) {
+        await setDoc(doc(db, 'dinners', dinnerRef.id, 'private', 'location'), { street })
+      }
+
       navigate('/my-dinners')
     } catch (error) {
       console.error('Error:', error)
@@ -88,8 +98,9 @@ export default function Hosten() {
             <input className="form-input" type="text" name="location" placeholder={t('host.locationPlaceholder')} value={form.location} onChange={handleChange} required/>
           </div>
           <div className="form-group">
-            <label className="form-label">{t('host.address')}</label>
+            <label className="form-label">{t('host.addressOptional')}</label>
             <input className="form-input" type="text" name="address" placeholder={t('host.addressPlaceholder')} value={form.address} onChange={handleChange}/>
+            <small className="form-hint">{t('host.addressPrivacyHint')}</small>
           </div>
         </div>
 

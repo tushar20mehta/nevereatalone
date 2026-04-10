@@ -49,6 +49,9 @@ export default function DinnerDetail() {
   const [guestProfiles, setGuestProfiles] = useState({})
   const [pendingProfiles, setPendingProfiles] = useState({})
 
+  // Private street address — only loaded if the viewer is host or confirmed guest.
+  const [privateStreet, setPrivateStreet] = useState('')
+
   useEffect(() => {
     const fetchDinner = async () => {
       const snap = await getDoc(doc(db, 'dinners', id))
@@ -79,6 +82,24 @@ export default function DinnerDetail() {
     }
     if (id) fetchRatings()
   }, [id, user])
+
+  // Fetch the private street address if the current user is host or an
+  // approved guest. Firestore rules enforce this; we don't even attempt the
+  // read otherwise, to avoid console errors.
+  useEffect(() => {
+    if (!dinner || !user) { setPrivateStreet(''); return }
+    const authorized = dinner.hostId === user.uid || (dinner.guests || []).includes(user.uid)
+    if (!authorized) { setPrivateStreet(''); return }
+    let cancelled = false
+    const fetchPrivate = async () => {
+      try {
+        const snap = await getDoc(doc(db, 'dinners', id, 'private', 'location'))
+        if (!cancelled && snap.exists()) setPrivateStreet(snap.data().street || '')
+      } catch (e) { /* not authorized or not set */ }
+    }
+    fetchPrivate()
+    return () => { cancelled = true }
+  }, [dinner?.id, dinner?.hostId, dinner?.guests, user?.uid])
 
   // Fetch host profile for Instagram
   useEffect(() => {
@@ -268,7 +289,13 @@ export default function DinnerDetail() {
           <div className="detail-info">
             {dinner.date && <div className="detail-info-item"><Calendar size={16}/> {dinner.date}{dinner.time ? `, ${dinner.time}` : ''}</div>}
             {dinner.location && <div className="detail-info-item"><MapPin size={16}/> {dinner.location}</div>}
-            {dinner.address && <div className="detail-info-item"><MapPin size={16}/> {dinner.address}</div>}
+            {/* Street address is only visible to the host or confirmed guests.
+                `privateStreet` comes from the /private/location subcollection.
+                `dinner.address` is the legacy field on older dinners and is
+                shown with the same host/guest gate for backward compatibility. */}
+            {(isHost || isGuest) && (privateStreet || dinner.address) && (
+              <div className="detail-info-item"><MapPin size={16}/> {privateStreet || dinner.address}</div>
+            )}
             <div className="detail-info-item"><Users size={16}/> {guestCount}/{dinner.maxGuests} {t('myDinners.guests')}</div>
           </div>
         </div>
