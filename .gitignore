@@ -5,3 +5,7 @@ dist-ssr
 .env
 .env.local
 .firebase/
+
+# Firestore backup files (may contain sensitive user data)
+backup-*.json
+nevereatalone-backup-*.json
