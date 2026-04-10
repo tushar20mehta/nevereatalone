@@ -49,6 +49,8 @@ service cloud.firestore {
         && isOptionalString(request.resource.data, 'bio', 1000)
         && isOptionalString(request.resource.data, 'instagram', 30)
         && isOptionalString(request.resource.data, 'address', 500)
+        && isOptionalString(request.resource.data, 'city', 100)
+        && isOptionalString(request.resource.data, 'postalCode', 20)
         && isOptionalString(request.resource.data, 'country', 10);
 
       // Owner can update, but cannot change uid / email / createdAt
@@ -59,9 +61,17 @@ service cloud.firestore {
         && isOptionalString(request.resource.data, 'bio', 1000)
         && isOptionalString(request.resource.data, 'instagram', 30)
         && isOptionalString(request.resource.data, 'address', 500)
+        && isOptionalString(request.resource.data, 'city', 100)
+        && isOptionalString(request.resource.data, 'postalCode', 20)
         && isOptionalString(request.resource.data, 'country', 10);
 
       allow delete: if isOwner(userId);
+
+      // Private subcollection: sensitive address details (street / house number).
+      // Only the owner may read or write their own private data.
+      match /private/{docId} {
+        allow read, write: if isOwner(userId);
+      }
     }
 
     // ---------- Dinners ----------
@@ -105,6 +115,19 @@ service cloud.firestore {
       );
 
       allow delete: if isSignedIn() && request.auth.uid == resource.data.hostId;
+
+      // Private subcollection: sensitive dinner details (exact street address).
+      // Read: host or already-approved guest.
+      // Write: host only.
+      match /private/{docId} {
+        allow read: if isSignedIn() && (
+          request.auth.uid == get(/databases/$(database)/documents/dinners/$(dinnerId)).data.hostId
+          || (request.auth.uid in get(/databases/$(database)/documents/dinners/$(dinnerId)).data.guests)
+        );
+        allow write: if isSignedIn()
+          && request.auth.uid == get(/databases/$(database)/documents/dinners/$(dinnerId)).data.hostId
+          && isOptionalString(request.resource.data, 'street', 200);
+      }
 
       // Chat messages — any signed-in user (app enforces participant UI)
       match /messages/{messageId} {

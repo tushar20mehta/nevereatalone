@@ -25,7 +25,7 @@ export default function RecommendedDinners({ dinners }) {
         const profile = userSnap.data()
         const preferences = (profile.cuisinePreferences || []).map(s => s.toLowerCase())
         const allergies = (profile.allergies || []).map(s => s.toLowerCase())
-        const userLocation = (profile.address || profile.location || '').toLowerCase()
+        const userLocation = (profile.city || profile.address || profile.location || '').toLowerCase()
 
         // If no preferences set, don't show recommendations
         if (preferences.length === 0 && allergies.length === 0 && !userLocation) {

@@ -8,7 +8,7 @@ import { User, Mail, Edit3, Save, X, ChefHat, Star, Calendar, MapPin, ArrowLeft,
 import { useToast } from '../context/ToastContext'
 import { useTranslation } from 'react-i18next'
 import StarRating from '../components/StarRating'
-import { COUNTRY_CODES, ADDRESS_PLACEHOLDERS } from '../utils/countries'
+import { COUNTRY_CODES } from '../utils/countries'
 
 export default function ProfilePage() {
   const { t } = useTranslation()
@@ -33,9 +33,14 @@ export default function ProfilePage() {
     allergies: '',
     cuisinePreferences: '',
     country: 'DE',
-    address: '',
+    city: '',
+    postalCode: '',
+    street: '',
     instagram: ''
   })
+  // Legacy multi-line address from older schema — shown read-only as a fallback
+  // until the user fills out the new city/postalCode fields.
+  const [legacyAddress, setLegacyAddress] = useState('')
 
   const profileUid = uid || user?.uid
   const isOwnProfile = user && profileUid === user.uid
@@ -49,22 +54,38 @@ export default function ProfilePage() {
         if (snap.exists()) {
           const data = snap.data()
           setProfile(data)
-          // Backwards compat: legacy had separate street/plz/city or a single `location` field
-          let legacyAddress = data.address || ''
-          if (!legacyAddress && (data.street || data.plz || data.city)) {
-            const parts = []
-            if (data.street) parts.push(data.street)
-            const line2 = [data.plz, data.city].filter(Boolean).join(' ')
-            if (line2) parts.push(line2)
-            legacyAddress = parts.join('\n')
+          // Backwards compat: assemble a legacy string view if no new fields are set yet
+          let legacy = ''
+          if (!data.city && !data.postalCode) {
+            legacy = data.address || ''
+            if (!legacy && (data.street || data.plz || data.city)) {
+              const parts = []
+              if (data.street) parts.push(data.street)
+              const line2 = [data.plz, data.city].filter(Boolean).join(' ')
+              if (line2) parts.push(line2)
+              legacy = parts.join('\n')
+            }
+            if (!legacy && data.location) legacy = data.location
           }
-          if (!legacyAddress && data.location) legacyAddress = data.location
+          setLegacyAddress(legacy)
+
+          // Load private street address (only owner can read their own)
+          let street = ''
+          if (isOwnProfile && user && profileUid === user.uid) {
+            try {
+              const privSnap = await getDoc(doc(db, 'users', profileUid, 'private', 'address'))
+              if (privSnap.exists()) street = privSnap.data().street || ''
+            } catch (e) { /* no private doc yet */ }
+          }
+
           setForm({
             bio: data.bio || '',
             allergies: (data.allergies || []).join(', '),
             cuisinePreferences: (data.cuisinePreferences || []).join(', '),
             country: data.country || 'DE',
-            address: legacyAddress,
+            city: data.city || '',
+            postalCode: data.postalCode || '',
+            street,
             instagram: data.instagram || ''
           })
         } else if (isOwnProfile && user) {
@@ -173,24 +194,37 @@ export default function ProfilePage() {
 
   const handleSave = async () => {
     if (!user) return
+    const city = form.city.trim()
+    const postalCode = form.postalCode.trim()
+    if (!city) { showToast(t('profile.cityRequired'), 'error'); return }
+    if (!postalCode) { showToast(t('profile.postalCodeRequired'), 'error'); return }
     setSaving(true)
     try {
+      const street = form.street.trim()
       const updates = {
         bio: form.bio.trim(),
         allergies: form.allergies.split(',').map(s => s.trim()).filter(Boolean),
         cuisinePreferences: form.cuisinePreferences.split(',').map(s => s.trim()).filter(Boolean),
         country: form.country,
-        address: form.address.trim(),
+        city,
+        postalCode,
         instagram: form.instagram.trim().replace(/^@/, ''),
         displayName: user.displayName || '',
         email: user.email || '',
         photoURL: profile?.photoURL || ''
       }
       await setDoc(doc(db, 'users', user.uid), updates, { merge: true })
+
+      // Write the sensitive street address into the private subcollection.
+      // Set even if empty so that a cleared field removes the old value.
+      await setDoc(doc(db, 'users', user.uid, 'private', 'address'), { street })
+
       setProfile(prev => ({ ...prev, ...updates }))
+      setLegacyAddress('')
       setEditing(false)
       showToast(t('profile.profileSaved'), 'success')
     } catch (err) {
+      console.error('Save profile error:', err)
       showToast(t('profile.saveError'), 'error')
     }
     setSaving(false)
@@ -283,10 +317,12 @@ export default function ProfilePage() {
 
   const displayName = profile?.displayName || t('common.user')
   const photoURL = profile?.photoURL || ''
-  // Build combined address display (backwards compat)
-  const displayAddress = profile?.address
-    || [profile?.street, [profile?.plz, profile?.city].filter(Boolean).join(' ')].filter(Boolean).join('\n')
-    || profile?.location || ''
+  // Public display: never shows street / house number. City + postal code only.
+  // Fallback: if the user hasn't filled the new fields yet, show the legacy
+  // string read-only so the profile isn't empty mid-migration.
+  const publicLocationLine = [profile?.postalCode, profile?.city].filter(Boolean).join(' ')
+  const hasNewAddress = !!(profile?.city || profile?.postalCode)
+  const displayAddress = hasNewAddress ? publicLocationLine : legacyAddress
   const displayCountry = profile?.country
 
   return (
@@ -413,16 +449,45 @@ export default function ProfilePage() {
                 </select>
               </div>
             </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">{t('profile.postalCode')} <span className="required">*</span></label>
+                <input
+                  className="form-input"
+                  type="text"
+                  placeholder={t('profile.postalCodePlaceholder')}
+                  value={form.postalCode}
+                  onChange={(e) => setForm(prev => ({ ...prev, postalCode: e.target.value }))}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">{t('profile.city')} <span className="required">*</span></label>
+                <input
+                  className="form-input"
+                  type="text"
+                  placeholder={t('profile.cityPlaceholder')}
+                  value={form.city}
+                  onChange={(e) => setForm(prev => ({ ...prev, city: e.target.value }))}
+                  required
+                />
+              </div>
+            </div>
             <div className="form-group">
-              <label className="form-label">{t('profile.address')}</label>
-              <textarea
-                className="form-textarea address-textarea"
-                placeholder={ADDRESS_PLACEHOLDERS[form.country] || ADDRESS_PLACEHOLDERS.OTHER}
-                value={form.address}
-                onChange={(e) => setForm(prev => ({ ...prev, address: e.target.value }))}
-                rows={3}
+              <label className="form-label">{t('profile.street')}</label>
+              <input
+                className="form-input"
+                type="text"
+                placeholder={t('profile.streetPlaceholder')}
+                value={form.street}
+                onChange={(e) => setForm(prev => ({ ...prev, street: e.target.value }))}
               />
-              <small className="form-hint">{t('profile.addressHint')}</small>
+              <small className="form-hint">{t('profile.addressPrivacyHint')}</small>
+              {legacyAddress && !form.city && !form.postalCode && (
+                <small className="form-hint" style={{ display: 'block', marginTop: 6, color: 'var(--color-text-light)' }}>
+                  {t('profile.legacyAddressNotice')}
+                </small>
+              )}
             </div>
             <div className="form-group">
               <label className="form-label"><Instagram size={14} /> {t('profile.instagram')}</label>
@@ -517,7 +582,7 @@ export default function ProfilePage() {
                   <div className="profile-dinner-info">
                     <strong>{d.title}</strong>
                     <span className="profile-dinner-meta">
-                      <Calendar size={12} /> {d.date} · <MapPin size={12} /> {d.location || d.address}
+                      <Calendar size={12} /> {d.date} · <MapPin size={12} /> {d.location}
                     </span>
                   </div>
                   <span className="profile-dinner-cuisine">{d.cuisine}</span>
