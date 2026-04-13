@@ -32,7 +32,7 @@ export default function ImpressumPage() {
       <div className="legal-section">
         <h2>Kontakt</h2>
         <p>
-          E-Mail: tushar20mehta@gmail.com
+          E-Mail: alextiktok403@gmail.com
         </p>
       </div>
 

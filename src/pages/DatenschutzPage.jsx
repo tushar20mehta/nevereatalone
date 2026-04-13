@@ -20,7 +20,7 @@ export default function DatenschutzPage() {
           {t('privacy.section1Text')}<br /><br />
           Tushar Mehta<br />
           {t('imprint.addressOnRequest')}<br /><br />
-          E-Mail: tushar20mehta@gmail.com
+          E-Mail: alextiktok403@gmail.com
         </p>
       </div>
 
@@ -105,7 +105,7 @@ export default function DatenschutzPage() {
         <p>
           {t('privacy.section9Text')}<br /><br />
           Tushar Mehta<br />
-          E-Mail: tushar20mehta@gmail.com
+          E-Mail: alextiktok403@gmail.com
         </p>
       </div>
 
