@@ -21,6 +21,26 @@ const CUISINE_VALUES = {
   vegetarian: 'Vegetarisch'
 }
 
+const CUISINE_IMAGES = {
+  italian: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=400&h=300&fit=crop&q=80',
+  asian: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=400&h=300&fit=crop&q=80',
+  german: 'https://images.unsplash.com/photo-1599921841143-819065a55cc6?w=400&h=300&fit=crop&q=80',
+  mexican: 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=400&h=300&fit=crop&q=80',
+  indian: 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=400&h=300&fit=crop&q=80',
+  mediterranean: 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=400&h=300&fit=crop&q=80',
+  vegetarian: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&h=300&fit=crop&q=80',
+}
+
+const CUISINE_EMOJI = {
+  italian: '🍝',
+  asian: '🍜',
+  german: '🥨',
+  mexican: '🌮',
+  indian: '🍛',
+  mediterranean: '🥗',
+  vegetarian: '🥬',
+}
+
 export default function Entdecken() {
   const { t } = useTranslation()
   const [dinners, setDinners] = useState([])
@@ -59,6 +79,30 @@ export default function Entdecken() {
       </section>
 
       <RecommendedDinners dinners={dinners} />
+
+      <section className="cuisine-cards-section">
+        <h2 className="cuisine-cards-title">{t('discover.cuisinesTitle', 'Entdecke Küchen')}</h2>
+        <div className="cuisine-cards-grid">
+          {CUISINE_KEYS.filter(k => k !== 'all').map((key) => (
+            <button
+              key={key}
+              className={`cuisine-card ${activeCuisine === key ? 'active' : ''}`}
+              onClick={() => setActiveCuisine(activeCuisine === key ? 'all' : key)}
+            >
+              <img
+                src={CUISINE_IMAGES[key]}
+                alt={t(`discover.cuisines.${key}`)}
+                className="cuisine-card-img"
+                loading="lazy"
+              />
+              <div className="cuisine-card-overlay">
+                <span className="cuisine-card-emoji">{CUISINE_EMOJI[key]}</span>
+                <span className="cuisine-card-label">{t(`discover.cuisines.${key}`)}</span>
+              </div>
+            </button>
+          ))}
+        </div>
+      </section>
 
       <section className="search-section">
         <div className="search-bar">
