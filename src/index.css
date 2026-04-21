@@ -794,6 +794,17 @@ input, textarea, select {
   border-bottom-color: var(--color-primary);
 }
 
+/* Secondary row: time-based filter (Upcoming / Past) */
+.my-dinners-time-tabs {
+  margin-top: -20px;
+  margin-bottom: 24px;
+}
+
+.my-dinners-time-tabs .my-dinners-tab {
+  padding: 10px 16px;
+  font-size: 0.9rem;
+}
+
 /* ===== Login Modal ===== */
 .modal-overlay {
   position: fixed;

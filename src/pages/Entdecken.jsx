@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next'
 import DinnerCard from '../components/DinnerCard'
 import DinnerMap from '../components/DinnerMap'
 import RecommendedDinners from '../components/RecommendedDinners'
+import { isPastDinner } from '../utils/dinner'
 
 const CUISINE_KEYS = ['all', 'italian', 'asian', 'german', 'mexican', 'indian', 'mediterranean', 'vegetarian']
 // Maps translation key to English internal value stored on dinners (we keep German values in DB for backwards compat)
@@ -60,6 +61,7 @@ export default function Entdecken() {
   }, [])
 
   const filtered = dinners.filter((d) => {
+    if (isPastDinner(d)) return false
     const matchesCuisine = activeCuisine === 'all' || d.cuisine === CUISINE_VALUES[activeCuisine]
     const matchesSearch = !searchTerm ||
       d.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||

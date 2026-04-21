@@ -5,37 +5,15 @@ import { useAuth } from '../context/AuthContext'
 import { Plus, UtensilsCrossed, Trash2, Users, X, ChevronDown, ChevronUp, Clock } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import DinnerCard from '../components/DinnerCard'
 import LoginModal from '../components/LoginModal'
-
-function isPastDinner(dinner) {
-  if (!dinner.date) return false
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-
-  let dinnerDate
-  if (/^\d{4}-\d{2}-\d{2}/.test(dinner.date)) {
-    dinnerDate = new Date(dinner.date)
-  } else {
-    dinnerDate = new Date(dinner.date)
-  }
-
-  if (dinner.time && !isNaN(dinnerDate.getTime())) {
-    const [hours, minutes] = dinner.time.split(':')
-    dinnerDate.setHours(parseInt(hours) || 0, parseInt(minutes) || 0)
-    return dinnerDate < new Date()
-  }
-
-  if (isNaN(dinnerDate.getTime())) return false
-  dinnerDate.setHours(0, 0, 0, 0)
-  return dinnerDate < today
-}
+import { isPastDinner } from '../utils/dinner'
 
 export default function MeineDinner() {
   const { t } = useTranslation()
   const { user } = useAuth()
   const navigate = useNavigate()
   const [tab, setTab] = useState('hosted')
+  const [timeTab, setTimeTab] = useState('upcoming')
   const [hostedDinners, setHostedDinners] = useState([])
   const [joinedDinners, setJoinedDinners] = useState([])
   const [loading, setLoading] = useState(true)
@@ -170,44 +148,63 @@ export default function MeineDinner() {
         <button className={`my-dinners-tab ${tab === 'joined' ? 'active' : ''}`} onClick={() => setTab('joined')}>{t('myDinners.joined')} ({joinedDinners.length})</button>
       </div>
 
+      <div className="my-dinners-tabs my-dinners-time-tabs">
+        <button
+          className={`my-dinners-tab ${timeTab === 'upcoming' ? 'active' : ''}`}
+          onClick={() => setTimeTab('upcoming')}
+        >
+          {t('myDinners.upcomingTab')} ({upcomingDinners.length})
+        </button>
+        <button
+          className={`my-dinners-tab ${timeTab === 'past' ? 'active' : ''}`}
+          onClick={() => setTimeTab('past')}
+        >
+          {t('myDinners.pastTab')} ({pastDinners.length})
+        </button>
+      </div>
+
       {loading ? (
         <div className="loading"><div className="spinner" /></div>
-      ) : currentDinnersRaw.length > 0 ? (
-        <div className="managed-dinners-list">
-          {upcomingDinners.length > 0 && (
-            <>
-              <h2 className="dinners-section-title">{t('myDinners.upcoming')}</h2>
-              {upcomingDinners.map((dinner) => renderDinnerCard(dinner, false))}
-            </>
-          )}
-
-          {pastDinners.length > 0 && (
-            <>
-              <div className="past-dinners-header">
-                <h2 className="dinners-section-title">{t('myDinners.past')} ({pastDinners.length})</h2>
-                {tab === 'hosted' && (
-                  <button
-                    className="btn-delete-all-past"
-                    onClick={handleDeleteAllPast}
-                    disabled={deletingPast}
-                  >
-                    <Trash2 size={16} />
-                    {deletingPast ? t('myDinners.deletingPast') : t('myDinners.deleteAllPast')}
-                  </button>
-                )}
+      ) : (() => {
+        const visibleDinners = timeTab === 'upcoming' ? upcomingDinners : pastDinners
+        if (visibleDinners.length === 0) {
+          if (timeTab === 'past') {
+            return (
+              <div className="empty-state">
+                <div className="empty-state-icon"><Clock size={32} /></div>
+                <h3>{t('myDinners.noPast')}</h3>
               </div>
-              {pastDinners.map((dinner) => renderDinnerCard(dinner, true))}
-            </>
-          )}
-        </div>
-      ) : (
-        <div className="empty-state">
-          <div className="empty-state-icon"><UtensilsCrossed size={32} /></div>
-          <h3>{tab === 'hosted' ? t('myDinners.noHosted') : t('myDinners.noJoined')}</h3>
-          <p>{tab === 'hosted' ? t('myDinners.createFirst') : t('myDinners.discoverNearby')}</p>
-          <button className="btn btn-primary" onClick={() => navigate(tab === 'hosted' ? '/create' : '/')}><Plus size={18} />{tab === 'hosted' ? t('myDinners.createDinner') : t('myDinners.discoverDinner')}</button>
-        </div>
-      )}
+            )
+          }
+          return (
+            <div className="empty-state">
+              <div className="empty-state-icon"><UtensilsCrossed size={32} /></div>
+              <h3>{tab === 'hosted' ? t('myDinners.noHosted') : t('myDinners.noJoined')}</h3>
+              <p>{tab === 'hosted' ? t('myDinners.createFirst') : t('myDinners.discoverNearby')}</p>
+              <button className="btn btn-primary" onClick={() => navigate(tab === 'hosted' ? '/create' : '/')}>
+                <Plus size={18} />{tab === 'hosted' ? t('myDinners.createDinner') : t('myDinners.discoverDinner')}
+              </button>
+            </div>
+          )
+        }
+        return (
+          <div className="managed-dinners-list">
+            {timeTab === 'past' && tab === 'hosted' && pastDinners.length > 0 && (
+              <div className="past-dinners-header">
+                <button
+                  className="btn-delete-all-past"
+                  onClick={handleDeleteAllPast}
+                  disabled={deletingPast}
+                >
+                  <Trash2 size={16} />
+                  {deletingPast ? t('myDinners.deletingPast') : t('myDinners.deleteAllPast')}
+                </button>
+              </div>
+            )}
+            {visibleDinners.map((dinner) => renderDinnerCard(dinner, timeTab === 'past'))}
+          </div>
+        )
+      })()}
     </div>
   )
 }
